@@ -132,7 +132,7 @@ angular.module('proton.authentication')
         });
     }
 
-    function tryAuth(infoResp, method, endpoint, req, creds, headers, fallbackAuthVersion) {
+    /*function tryAuth(infoResp, method, endpoint, req, creds, headers, fallbackAuthVersion) {
         function srpHasher(arr) {
             return passwords.expandHash(pmcrypto.arrayToBinaryString(arr));
         }
@@ -215,6 +215,41 @@ angular.module('proton.authentication')
                     return Promise.reject({
                         error_description: 'Invalid server authentication'
                     });
+                }
+            },
+            (error) => {
+                return Promise.reject(error);
+            }
+        );
+    }*/
+
+    function tryAuth(infoResp, method, endpoint, req, creds, headers, fallbackAuthVersion) {
+        const useFallback = false;
+        const session = infoResp.data.SRPSession;
+
+        const httpReq = {
+            method,
+            url: url.get() + endpoint,
+            data: _.extend(req, {
+                SRPSession: session,
+                Username: creds.Username,
+                Password: creds.Password,
+                TwoFactorCode: creds.TwoFactorCode
+            })
+        };
+        if (angular.isDefined(headers)) {
+            httpReq.headers = headers;
+        }
+
+        return $http(httpReq).then(
+            (resp) => {
+                if (resp.data.Code !== 1000) {
+                    return Promise.reject({
+                        error_description: resp.data.Error,
+                        usedFallback: useFallback
+                    });
+                } else {
+                    return Promise.resolve(_.extend(resp, { authVersion: passwords.currentAuthVersion }));
                 }
             },
             (error) => {
