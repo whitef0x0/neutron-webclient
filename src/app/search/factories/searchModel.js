@@ -25,7 +25,7 @@ angular.module('proton.search')
             return [{
                 Email: gettextCatalog.getString('All', null),
                 ID: undefined,
-                Send: 0,
+                Order: 0,
                 Receive: 1,
                 Status: 1
             }].concat(authentication.user.Addresses);
@@ -48,6 +48,7 @@ angular.module('proton.search')
             begin: undefined,
             end: undefined,
             attachments: undefined,
+            wildcard: undefined,
             starred: undefined,
             reload: undefined
         });
@@ -65,24 +66,42 @@ angular.module('proton.search')
             }
         };
 
+        /**
+         * Format date interval
+         * If both date are equal (we selected the same day) we
+         * will return
+         *     - begin = 0:00
+         *     - end = 23:59
+         * @param  {Number} options.begin
+         * @param  {Number} options.end
+         * @return {Object}
+         */
+        const dateInterval = ({ begin, end }) => {
+            if (begin && begin === end) {
+                return { begin, end: end + (24 * 3600 - 1) };
+            }
+            return { begin, end };
+        };
+
         const build = (data = {}) => {
             const model = angular.copy(data);
             const attachments = +model.attachments;
-            const date = {
+            const wildcard = +model.wildcard;
+            const date = dateInterval({
                 begin: extractDate(model.begin),
                 end: extractDate(model.end)
-            };
+            });
 
             return _.extend(resetParameters(), {
                 to: model.to,
                 from: model.from,
                 keyword: model.keyword,
+                wildcard: isNaN(wildcard) ? undefined : wildcard,
                 attachments: isNaN(attachments) ? undefined : attachments,
                 address: (model.address || {}).ID,
                 label: model.label || getLabel(model.folder)
             }, date);
         };
-
 
         return { getFolderList, getAddresses, resetParameters, build };
     });

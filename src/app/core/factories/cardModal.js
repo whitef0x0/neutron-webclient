@@ -1,88 +1,63 @@
 angular.module('proton.core')
-.factory('cardModal', (pmModal, Payment, notify, pmcw, tools, gettextCatalog, $q, networkActivityTracker) => {
-    return pmModal({
-        controllerAs: 'ctrl',
-        templateUrl: 'templates/modals/card.tpl.html',
-        controller(params) {
-            // Variables
-            const self = this;
-            self.process = false;
-            self.card = {};
-            if (params.method) {
-                self.text = gettextCatalog.getString('Update your credit card information.', null);
-                self.mode = 'display';
-                self.panel = {
-                    fullname: params.method.Details.Name,
-                    number: '•••• •••• •••• ' + params.method.Details.Last4,
-                    month: params.method.Details.ExpMonth,
-                    year: params.method.Details.ExpYear,
-                    cvc: '•••',
-                    zip: params.method.Details.ZIP,
-                    country: params.method.Details.Country
-                };
-            } else {
-                self.text = gettextCatalog.getString('Add a credit card.', null);
-                self.mode = 'edition';
-            }
+    .factory('cardModal', (pmModal, Payment, gettextCatalog, cardModel, networkActivityTracker, paymentModel) => {
+        return pmModal({
+            controllerAs: 'ctrl',
+            templateUrl: 'templates/modals/card.tpl.html',
+            /* @ngInject */
+            controller: function (params) {
+                // Variables
+                const self = this;
+                self.card = {};
 
-            // Functions
-            const method = () => {
-                const deferred = $q.defer();
-
-                if (self.mode === 'edition') {
-                    const { number, month, year, cvc, fullname, zip } = self.card;
-                    const country = self.card.country.value;
-
-                    Payment.updateMethod({
-                        Type: 'card',
-                        Details: {
-                            Number: number,
-                            ExpMonth: month,
-                            ExpYear: (year.length === 2) ? '20' + year : year,
-                            CVC: cvc,
-                            Name: fullname,
-                            Country: country,
-                            ZIP: zip
-                        }
-                    }).then((result) => {
-                        if (result.data && result.data.Code === 1000) {
-                            deferred.resolve(result.data.PaymentMethod);
-                        } else if (result.data && result.data.Error) {
-                            deferred.reject(new Error(result.data.Error));
-                        }
-                    });
+                if (params.method) {
+                    self.text = gettextCatalog.getString('Update your credit card information.', null);
+                    self.mode = 'display';
+                    self.panel = {
+                        fullname: params.method.Details.Name,
+                        number: '•••• •••• •••• ' + params.method.Details.Last4,
+                        month: params.method.Details.ExpMonth,
+                        year: params.method.Details.ExpYear,
+                        cvc: '•••',
+                        zip: params.method.Details.ZIP,
+                        country: params.method.Details.Country
+                    };
                 } else {
-                    deferred.resolve();
+                    self.text = gettextCatalog.getString('Add a credit card.', null);
+                    self.mode = 'edition';
                 }
 
-                return deferred.promise;
-            };
+                // Functions
+                const method = () => {
+                    if (self.mode === 'edition') {
+                        const card = cardModel(self.card);
+                        return Payment.updateMethod({ Type: 'card', Details: card.details() })
+                            .then(({ data = {} } = {}) => {
+                                if (data.Code === 1000) {
+                                    return data.PaymentMethod;
+                                }
+                                throw new Error(data.Error);
+                            });
+                    }
+                    return Promise.resolve();
+                };
 
-            const finish = (method) => {
-                params.close(method);
-            };
 
-            self.edit = () => {
-                self.card.fullname = self.panel.fullname;
-                self.mode = 'edition';
-            };
+                self.edit = () => {
+                    self.card.fullname = self.panel.fullname;
+                    self.mode = 'edition';
+                };
 
-            self.submit = () => {
-                self.process = true;
+                self.submit = () => {
+                    const promise = method()
+                        .then((method) => {
+                            return paymentModel.getMethods(true)
+                                .then((methods) => ({ method, methods }));
+                        })
+                        .then(params.close);
+                    networkActivityTracker.track(promise);
+                };
 
-                networkActivityTracker.track(
-                    method()
-                    .then(finish)
-                    .catch((error) => {
-                        notify({ message: error, classes: 'notification-danger' });
-                        self.process = false;
-                    })
-                );
-            };
-
-            self.cancel = () => {
-                params.close();
-            };
-        }
+                self.cancel = params.close;
+            }
+        });
     });
-});

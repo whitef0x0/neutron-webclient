@@ -1,5 +1,5 @@
 angular.module('proton.bugReport')
-    .factory('bugReportApi', (Bug, CONFIG, $state, tools, authentication, gettextCatalog, networkActivityTracker, notify) => {
+    .factory('bugReportApi', (Bug, CONFIG, $state, aboutClient, authentication, gettextCatalog, networkActivityTracker, notification) => {
         const LAYOUTS = ['column', 'row'];
         const MODES = ['conversation', 'message'];
 
@@ -9,15 +9,15 @@ angular.module('proton.bugReport')
          */
         const getForm = () => {
             const { Name = '', Addresses = [], ViewLayout = '', ViewMode = '' } = authentication.user;
-            const [{ Email = '' } = {}] = _.sortBy(Addresses, 'Send');
+            const [{ Email = '' } = {}] = _.sortBy(Addresses, 'Order');
             return {
-                OS: tools.getOs(),
+                OS: aboutClient.getOS(),
                 OSVersion: '',
                 DisplayMode: angular.isNumber(ViewLayout) ? LAYOUTS[ViewLayout] : '',
                 ViewMode: angular.isNumber(ViewMode) ? MODES[ViewMode] : '',
                 Resolution: `${window.innerHeight} x ${window.innerWidth}`,
-                Browser: tools.getBrowser(),
-                BrowserVersion: tools.getBrowserVersion(),
+                Browser: aboutClient.getBrowser(),
+                BrowserVersion: aboutClient.getBrowserVersion(),
                 Client: 'Angular',
                 ClientVersion: CONFIG.app_version,
                 Title: `[Angular] Bug [${$state.$current.name}]`,
@@ -56,15 +56,7 @@ angular.module('proton.bugReport')
          */
         const send = (form) => {
             return Bug.report(form)
-                .then((data) => {
-                    if (data.Code === 1000) {
-                        notify({
-                            message: gettextCatalog.getString('Bug reported', null),
-                            classes: 'notification-success'
-                        });
-                    }
-                    return data;
-                });
+                .then(() => notification.success(gettextCatalog.getString('Bug reported', null)));
         };
 
         /**

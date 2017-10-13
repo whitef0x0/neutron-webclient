@@ -1,5 +1,5 @@
 angular.module('proton.attachments')
-    .directive('listAttachments', (attachmentDownloader, $state, $rootScope) => {
+    .directive('listAttachments', ($state, $rootScope, attachmentDownloader, notification) => {
 
         const DECRYPTING_CLASSNAME = 'listAttachments-item-decrypt';
         const DOWNLOADED_CLASSNAME = 'listAttachments-item-download';
@@ -41,6 +41,10 @@ angular.module('proton.attachments')
                             .download(attachment, scope.model, target)
                             .then(() => {
                                 target.classList.add(DOWNLOADED_CLASSNAME);
+                            })
+                            .catch((error) => {
+                                target.classList.remove(DECRYPTING_CLASSNAME);
+                                notification.error(error);
                             });
                     }
 

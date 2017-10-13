@@ -1,5 +1,5 @@
 angular.module('proton.message')
-    .factory('messageBuilder', (gettextCatalog, prepareContent, tools, authentication, messageModel, $filter, signatureBuilder, CONSTANTS) => {
+    .factory('messageBuilder', (gettextCatalog, prepareContent, tools, authentication, messageModel, $filter, signatureBuilder, CONSTANTS, sanitize) => {
 
         const RE_PREFIX = gettextCatalog.getString('Re:', null);
         const FW_PREFIX = gettextCatalog.getString('Fw:', null);
@@ -16,7 +16,8 @@ angular.module('proton.message')
         }
 
         function formatSubject(subject = '', prefix = RE_PREFIX) {
-            const hasPrefix = subject.toLowerCase().indexOf(prefix.toLowerCase()) === 0;
+            const combinaisons = (prefix === RE_PREFIX) ? [RE_PREFIX, `${FW_PREFIX} ${RE_PREFIX}`] : [FW_PREFIX, `${RE_PREFIX} ${FW_PREFIX}`];
+            const hasPrefix = _.find(combinaisons, (pre) => subject.toLowerCase().indexOf(pre.toLowerCase()) === 0);
 
             return hasPrefix ? subject : `${prefix} ${subject}`;
         }
@@ -33,7 +34,8 @@ angular.module('proton.message')
                     normalLinebreaks,
                     escapeHTML,
                     convertLinebreaks
-                ], (acc, fn) => fn(acc), input);
+                ], (acc, fn) => fn(acc), input)
+                    .trim();
             }
             return input;
         }
@@ -147,7 +149,7 @@ angular.module('proton.message')
         }
 
         function builder(action, currentMsg = {}, newMsg = {}) {
-            const addresses = _.chain(authentication.user.Addresses).where({ Status: 1, Receive: 1 }).sortBy('Send').value();
+            const addresses = _.chain(authentication.user.Addresses).where({ Status: 1, Receive: 1 }).sortBy('Order').value();
 
             (action === 'new') && newCopy(newMsg, currentMsg);
             (action === 'reply') && reply(newMsg, currentMsg);
@@ -167,7 +169,7 @@ angular.module('proton.message')
             newMsg.NumEmbedded = 0;
 
             if (action !== 'new') {
-                const subject = DOMPurify.sanitize('Subject: ' + currentMsg.Subject + '<br>');
+                const subject = sanitize.input(`Subject: ${currentMsg.Subject}<br>`);
                 const cc = tools.contactsToString(Array.isArray(currentMsg.CCList) ? currentMsg.CCList : [currentMsg.CCList]);
 
                 newMsg.ParentID = currentMsg.ID;
@@ -198,7 +200,7 @@ angular.module('proton.message')
             const enabledAddresses = _
                 .chain(authentication.user.Addresses)
                 .where({ Status: 1 })
-                .sortBy('Send')
+                .sortBy('Order')
                 .value();
 
             let sender = enabledAddresses[0];

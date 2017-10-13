@@ -263,16 +263,6 @@
         .squireToolbar-container { border-width: 1px 1px 0 1px }
         [class*="squireToolbar-action-"] { padding: 0 }
 
-        .pm_sort ul li {
-            .label {
-                white-space: nowrap;
-                display: inline-block;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                width: 60%;
-                line-height: 32px;
-            }
-        }
         .pm_buttons .fa.fa-angle-down {
             padding: 0 .5rem;
         }
@@ -320,10 +310,6 @@
             }
             .setting {
                 box-sizing: border-box;
-                .as-sortable-placeholder {
-                    background: $border !important;
-                    box-sizing: border-box;
-                }
                 .pm_table {
                     td {
                         strong {
@@ -334,56 +320,13 @@
                         }
                     }
                 }
-                .as-sortable-dragging {
-                    border: 1px solid $border;
-                    line-height: 2rem;
-                    background: $white;
-                    box-sizing: border-box;
-                    overflow: hidden;
-                    padding: 0 1rem;
-                    .fa-check {
-                        line-height: 2rem;
-                        padding: 0 1rem;
-                        background: $white;
-                        color: #9397cd;
-                        position: absolute;
-                        right: 0;
-                        top: 0;
-                        bottom: 0;
-                    }
-                    .fa-ellipsis-v {
-                        line-height: 32px;
-                        float: left;
-                        margin-right: .5rem;
-                    }
-                }
-                .angular-squire-wrapper {
-                    width: 100%;
-                    iframe {
-                        width: 100%;
-                        height: 10rem;
-                        border: 1px solid $border;
-                        border-top-width: 0;
-                        box-sizing: border-box;
-                    }
-                }
                 .radio {
                     display: inline-block;
                     img {
                         max-width: 100%;
                     }
                 }
-                #logArea {
-                    padding: 1rem 0;
-                }
-                #logActions {
-                    .pm_button.pull-left {
-                        margin: 0 0 0 5px;
-                    }
-                }
-                #logRefresh {
-                    margin-right: 1rem;
-                }
+
                 #aliases-container {
                     ul {
                         li {
@@ -412,24 +355,7 @@ body.appConfigBody-is-mobile {
             padding-top: 2rem;
         }
 
-        .settings {
-            padding: 0 10px;
-            .pm_sort ul {
-                border-right: 1rem solid $border;
-                margin-bottom: 1rem;
-                li {
-                    padding-right: 0;
-                    .label {
-                        max-width: 80px;
-                    }
-                    .pull-right {
-                        .pm_button {
-                            width: initial;
-                        }
-                    }
-                }
-            }
-        }
+        .settings { padding: 0 10px }
         .pm_tabs {
             padding-left: 10px;
             .pm_button {
@@ -615,21 +541,6 @@ body.appConfigBody-is-mobile {
 }
 
 #paymentsModal {
-    th.desc,
-    td.desc {
-        padding-right: 0;
-        .space {
-            width: 20px;
-            display: inline-block;
-        }
-    }
-
-    th.price,
-    td.price {
-        padding-left: 0;
-        width: 65px;
-    }
-
     .disabled {
         input,
         select {
@@ -686,5 +597,3 @@ body.appConfigBody-is-mobile {
 }
 
 .ua-ie-11 [name="signature"] .squire-popover [class*="-input"] { padding: .3em 1em }
-
-

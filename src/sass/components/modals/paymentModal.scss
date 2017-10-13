@@ -1,0 +1,50 @@
+.paymentForm-cycle-year {
+    .paymentForm-paypal-about-month,
+    .paymentForm-about-month { display: none }
+}
+
+.paymentsModal-step-process,
+.paymentsModal-method-paypal:not(.paymentsModal-enough-credit) {
+    .paymentsModal-btn-submit { display: none }
+}
+
+.paymentsModal-container:not(.paymentsModal-step-pay) {
+    .paymentsModal-paymentForm { display: none }
+}
+
+.paymentsModal-container:not(.paymentsModal-step-process) {
+    .paymentsModal-process { display: none }
+}
+
+.paymentsModal-container:not(.paymentsModal-step-thanks) {
+    .paymentsModal-thanks,
+    .paymentsModal-btn-close { display: none }
+}
+
+.paymentsModal-container.paymentsModal-step-thanks {
+    .paymentsModal-title,
+    .paymentsModal-btn-cancel,
+    .paymentsModal-btn-submit { display: none }
+
+    .paymentsModal-group-btn { display: flex }
+    .paymentsModal-btn-close { margin-left: auto  }
+
+}
+
+.paymentsModal-group-btn {
+    display: flex;
+    justify-content: space-between;
+}
+
+.paymentsModal-step-process, .paymentsModal-method-bitcoin,
+.paymentsModal-method-paypal, .paymentsModal-method-cash {
+    .paymentsModal-group-btn { justify-content: flex-end }
+}
+
+.paymentsModal-container.paymentsModal-method-bitcoin,
+.paymentsModal-container.paymentsModal-method-cash {
+    .paymentsModal-btn-cancel,
+    .paymentsModal-btn-submit { display: none }
+
+    .paymentsModal-btn-close { display: inline-block }
+}

@@ -1,14 +1,14 @@
 <form
     method="post"
     id="pm_login"
+    name="unlockForm"
     class="pm_panel pm_form alt"
-    ng-class="{'loadingUnlock': domoArigato }"
+    ng-class="{ loadingUnlock: domoArigato }"
     novalidate
     role="form"
     autocomplete="on"
     ng-submit="unlock($event)">
-
-    <div ng-hide="domoArigato">
+    <div class="unlock-panel">
 
         <img src="/assets/img/logo.png" height="20" alt="ProtonMail" class="logo" />
 
@@ -20,37 +20,37 @@
 
         <div class="alert alert-danger" id="error521" ng-if="error">{{ error.message }}</div>
 
-        <input
-            autofocus
-            autocapitalize="off"
-            autocorrect="off"
+        <password
             class="margin focus unlock-input-password"
-            type="password"
-            id="password"
-            name="MailboxPassword"
-            ng-model="mailboxPassword"
-            placeholder-translate="Mailbox password">
+            data-id="password"
+            data-name="mailbox-password"
+            data-value="mailboxPassword"
+            data-form="unlockForm"
+            data-autofocus="true"
+            placeholder-translate="Mailbox password"></password>
 
-        <div class="clearfix">
-            <button
-                type="button"
-                ng-click="reset()"
-                class="login-support pm_button link pull-left unlock-btn-forgot"
-                translate-context="Action"
-                translate
-                translate-comment="link to reset mailbox">Forgot password?</button>
-            <button
-                id="unlock_btn"
-                class="pm_button primary pull-right"
-                type="submit"
-                ng-disabled="networkActivity.loading()"
-                translate-context="Action"
-                translate>Unlock</button>
+        <div class="loginForm-actions">
+            <div class="loginForm-actions-column">
+                <button
+                    id="unlock_btn"
+                    class="loginForm-actions-main pm_button primary pull-right"
+                    type="submit"
+                    ng-disabled="networkActivity.loading()"
+                    translate-context="Action"
+                    translate>Unlock</button>
+                <button
+                    type="button"
+                    ng-click="reset()"
+                    class="login-support pm_button link pull-left unlock-btn-forgot"
+                    translate-context="Action"
+                    translate
+                    translate-comment="link to reset mailbox">Forgot password?</button>
+            </div>
         </div>
 
     </div>
 
-    <div ng-show="domoArigato" class="loadingUnlock-loader-container">
+    <div class="loadingUnlock-loader-container">
         <atom-loader data-translation-key="decrypting"></atom-loader>
     </div>
 </form>

@@ -1,6 +1,8 @@
 angular.module('proton.labels')
-    .factory('labelsModel', ($rootScope, CONSTANTS) => {
+    .factory('labelsModel', ($rootScope, CONSTANTS, sanitize) => {
 
+        const IS_LABEL = 0;
+        const IS_FOLDER = 1;
         const ACTIONS = {
             [CONSTANTS.STATUS.DELETE]: 'remove',
             [CONSTANTS.STATUS.CREATE]: 'create',
@@ -25,12 +27,13 @@ angular.module('proton.labels')
          * @param  {Array} labels
          * @return {Array}
          */
-        function cleanLabels(labels = []) {
-            return labels.map((label) => {
-                label.Name = DOMPurify.sanitize(label.Name);
-                label.Color = DOMPurify.sanitize(label.Color);
-                return label;
-            });
+        const cleanLabels = (labels = []) => labels.map((label) => cleanLabel(label));
+
+        function cleanLabel(label) {
+            label.Name = sanitize.input(label.Name);
+            label.Color = sanitize.input(label.Color);
+            label.notify = !!label.Notify;
+            return label;
         }
 
         /**
@@ -52,14 +55,14 @@ angular.module('proton.labels')
 
         const syncLabels = () => {
             CACHE.labels = _.chain(CACHE.all)
-                .where({ Exclusive: 0 })
+                .where({ Exclusive: IS_LABEL })
                 .sortBy('Order')
                 .value();
         };
 
         const syncFolders = () => {
             CACHE.folders = _.chain(CACHE.all)
-                .where({ Exclusive: 1 })
+                .where({ Exclusive: IS_FOLDER })
                 .sortBy('Order')
                 .value();
         };
@@ -130,10 +133,10 @@ angular.module('proton.labels')
             }, { update: {}, create: [], remove: {} });
 
             CACHE.all = _.chain(CACHE.all)
-                .map((label) => todo.update[label.ID] || label)
+                .map((label) => cleanLabel(todo.update[label.ID] || label))
                 .filter(({ ID }) => !todo.remove[ID])
                 .value()
-                .concat(todo.create);
+                .concat(todo.create.map((label) => cleanLabel(label)));
 
             syncMap();
             syncLabels();
@@ -153,5 +156,8 @@ angular.module('proton.labels')
             (type === 'loggedIn' && !data.value) && set();
         });
 
-        return { get, set, contains, sync, read, ids, refresh };
+        return {
+            get, set, contains, sync, read, ids, refresh,
+            IS_LABEL, IS_FOLDER
+        };
     });

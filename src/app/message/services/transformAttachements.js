@@ -1,5 +1,5 @@
 angular.module('proton.message')
-    .factory('transformAttachement', (embedded, $rootScope) => {
+    .factory('transformAttachements', (embedded, $rootScope) => {
         return (body, message, action) => {
 
             /**
@@ -15,8 +15,7 @@ angular.module('proton.message')
                 }
             });
 
-            embedded
-                .parser(message, 'blob', body.innerHTML)
+            embedded.parser(message, { direction: 'blob', text: body.innerHTML })
                 .then(() => $rootScope.$emit('message.embedded', {
                     type: 'loaded',
                     data: { message, body, action }

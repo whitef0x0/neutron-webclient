@@ -6,6 +6,7 @@ body {
             line-height: 40px;
             padding: 0;
             border-bottom:1px solid $border;
+            background: $white;
 
             .ptSelectConversation-container {
                 @include flexRow();
@@ -24,7 +25,7 @@ body {
                 width: 1rem;
                 cursor: pointer;
             }
-            .fa-star-o { color: $default-color-light }
+            .fa-star-o { color: inherit; opacity: .3 }
             .fa-star { color: $yellow }
 
             .senders {
@@ -41,6 +42,7 @@ body {
                 box-sizing: border-box;
                 width: calc(84% - 17rem);
                 padding-left: 4px;
+                background: inherit;
                 cursor: pointer;
 
                 h4 {
@@ -53,6 +55,7 @@ body {
                     max-width: 90%;
 
                     .subject-text {
+                        flex: 1;
                         padding: 2px 0px; /*ellipsis*/
                         margin: -2px 0px;
                     }
@@ -79,7 +82,15 @@ body {
                     line-height: 40px;
                     color: rgba(0,0,0,.35);
                 }
-                .labelsElement-container { height: 22px }
+                .labelsElement-container {
+                    position: absolute;
+                    right: 0;
+                    top: 0;
+                    display: flex;
+                    align-items: center;
+                    height: 100%;
+                    padding: 10px 0px;
+                }
             }
 
             .size,
@@ -91,13 +102,13 @@ body {
                 padding-right: 1rem;
             }
             time.time {
+                box-sizing: border-box;
                 float: right;
                 text-align: right;
-                width: 7rem;
                 font-style: normal;
                 position: relative;
-                top: 1px;
-                padding-right: 2rem;
+                padding-left: 5px;
+                white-space: nowrap;
             }
 
             .expiration {
@@ -132,12 +143,6 @@ body {
                     h4 {
                         font-weight: normal;
                         color: inherit;
-                    }
-                    .pm_labels {
-                        background: inherit;
-                        label {
-                            background: inherit;
-                        }
                     }
                 }
             }

@@ -1,59 +1,57 @@
 angular.module('proton.message')
-.factory('transformEscape', () => {
+    .factory('transformEscape', () => {
 
-    /**
-     * Unescape the textContent only and inside a synthax Highlighting block
-     * Compat
-     *     - fontawesome
-     *     - prism
-     *     - etc.
-     * @param  {Node} dom
-     * @return {Node}
-     */
-    const syntaxHighlighterFilter = (dom) => {
-        const $pre = dom.querySelectorAll('.pre, pre');
-        _.each($pre, (node) => {
-            const $code = node.querySelector('.code, code');
-            if (!$code) {
-                return;
-            }
-            _.each($code.querySelectorAll('span'), (node) => {
-                if (node.querySelector('*')) {
-                    return;
+
+        /**
+         * Prevent escape url on the textContent if you display some code
+         * inside the message
+         * @param  {Node} node
+         * @return {void}
+         */
+        const recursiveCleanerCode = (node) => {
+            _.each(node.querySelectorAll('*'), (node) => {
+
+                if (node.childElementCount) {
+                    return recursiveCleanerCode(node);
                 }
 
-                if (/proton-/.test(node.textContent)) {
-                    node.textContent = node.textContent.replace(/proton-/, '');
+                if (/proton-/g.test(node.textContent)) {
+                    node.textContent = node.textContent.replace(/proton-/g, '');
                 }
             });
-        });
+        };
 
-        return dom;
-    };
+        /**
+         * Unescape the textContent only and inside a synthax Highlighting block
+         * Compat
+         *     - fontawesome
+         *     - prism
+         *     - etc.
+         * @param  {Node} dom
+         * @return {Node}
+         */
+        const syntaxHighlighterFilter = (dom) => {
+            const $pre = dom.querySelectorAll('.pre, pre, code');
+            _.each($pre, (node) => {
 
-    /**
-     * Prevent attack via the referrer
-     *  > area with a target blank and a redirect on window.opener
-     * {@link https://www.jitbit.com/alexblog/256-targetblank---the-most-underestimated-vulnerability-ever/}
-     * {@link https://mathiasbynens.github.io/rel-noopener/}
-     * @param  {Node} dom
-     * @return {Node}
-     */
-    const noRefferer = (dom) => {
-        const $href = dom.querySelectorAll('[href]');
-        _.each($href, (node) => {
-            node.setAttribute('rel', 'noreferrer nofollow noopener');
-        });
-        return dom;
-    };
+                if ((node.nodeName === 'PRE' || node.nodeName === 'CODE') && !node.childElementCount) {
+                    node.textContent = node.textContent.replace(/proton-/g, '');
+                    return;
+                }
+                recursiveCleanerCode(node);
+            });
+
+            return dom;
+        };
 
 
-    const REGEXP_IS_BREAK = new RegExp('(<svg|xlink:href|srcset|src=|background=|poster=)', 'g');
-    const REGEXP_IS_URL = new RegExp(/url\(/ig);
-    const replace = (regex, input) => input.replace(regex, (match) => `proton-${match}`);
+        const REGEXP_IS_BREAK = new RegExp('(svg|xlink:href|srcset=|src=|background=|poster=)(?=(([^"><\\\\]|\\\\[^><])|"([^"><\\\\]|\\\\[^><])*")*>)', 'g');
+        const REGEXP_IS_URL = new RegExp(/(url\()/ig);
+        const replace = (regex, input) => input.replace(regex, 'proton-$1');
 
-    return (html, message, { content = '' }) => {
-        html.innerHTML = replace(REGEXP_IS_URL, replace(REGEXP_IS_BREAK, content));
-        return noRefferer(syntaxHighlighterFilter(html));
-    };
-});
+        return (html, message, { content = '' }) => {
+
+            html.innerHTML = replace(REGEXP_IS_URL, replace(REGEXP_IS_BREAK, content));
+            return syntaxHighlighterFilter(html);
+        };
+    });

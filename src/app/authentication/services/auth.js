@@ -9,6 +9,7 @@ angular.module('proton.authentication')
     $injector,
     $exceptionHandler,
     authApi,
+    checkKeysFormat,
     CONFIG,
     CONSTANTS,
     Contact,
@@ -18,7 +19,6 @@ angular.module('proton.authentication')
     Key,
     Label,
     networkActivityTracker,
-    notify,
     pmcw,
     secureSessionStorage,
     organizationApi,
@@ -27,7 +27,10 @@ angular.module('proton.authentication')
     srp,
     labelsModel,
     setupKeys,
-    AppModel
+    AppModel,
+    tempStorage,
+    sanitize,
+    upgradeKeys
 ) => {
     let keys = {}; // Store decrypted keys
     /**
@@ -37,8 +40,8 @@ angular.module('proton.authentication')
      */
     function cleanContacts(contacts = []) {
         return contacts.map((contact) => {
-            contact.Name = DOMPurify.sanitize(contact.Name);
-            contact.Email = DOMPurify.sanitize(contact.Email);
+            contact.Name = sanitize.input(contact.Name);
+            contact.Email = sanitize.input(contact.Email);
             return contact;
         });
     }
@@ -93,7 +96,7 @@ angular.module('proton.authentication')
 
                 // Hacky fix for missing organizations
                 const fixOrganization = () => {
-                    if (user.Role === CONSTANTS.FREE_USER_ROLE && user.Subscribed === 1) {
+                    if (user.Role === CONSTANTS.FREE_USER_ROLE && user.Subscribed) {
                         return setupKeys.generateOrganization(api.getPassword())
                         .then((response) => {
                             const privateKey = response.privateKeyArmored;
@@ -252,15 +255,6 @@ angular.module('proton.authentication')
             return string;
         },
 
-        getPrivateKey() {
-            const pw = pmcw.decode_utf8_base64(secureSessionStorage.getItem(CONSTANTS.MAILBOX_PASSWORD_KEY));
-
-            return pmcw.decryptPrivateKey(this.user.EncPrivateKey, pw).catch((err) => {
-                $log.error(this.user.EncPrivateKey);
-                throw err;
-            });
-        },
-
         /**
          * Return the private keys available for a specific address ID
          * @param {String} addressID
@@ -318,6 +312,7 @@ angular.module('proton.authentication')
                 ClientID: CONFIG.clientID,
                 GrantType: 'refresh_token',
                 RefreshToken: authResponse.RefreshToken,
+                Uid: authResponse.Uid,
                 RedirectURI: 'https://protonmail.com',
                 State: this.randomString(24)
             })
@@ -328,7 +323,7 @@ angular.module('proton.authentication')
                     if (result.data.Code === 1000) {
                         $log.debug('/auth/cookies:', result);
                         $log.debug('/auth/cookies1: resolved');
-                        $rootScope.domoArigato = true;
+                        AppModel.set('domoArigato', true);
                         // forget the old headers, set the new ones
                         $log.debug('/auth/cookies2: resolved');
                         deferred.resolve(200);
@@ -431,6 +426,14 @@ angular.module('proton.authentication')
             return this.isLoggedIn() === false || angular.isUndefined(this.getPassword());
         },
 
+        hasPaidMail() {
+            return this.user.Subscribed & 1;
+        },
+
+        hasPaidVpn() {
+            return this.user.Subscribed & 4;
+        },
+
         isSecured() {
             return this.isLoggedIn() && angular.isDefined(this.getPassword());
         },
@@ -499,7 +502,7 @@ angular.module('proton.authentication')
             $rootScope.isLoggedIn = this.isLoggedIn();
             $rootScope.isLocked = this.isLocked();
             $rootScope.isSecure = this.isSecured();
-            $rootScope.domoArigato = false;
+            AppModel.set('domoArigato', false);
             AppModel.set('loggedIn', false);
         },
 
@@ -509,6 +512,7 @@ angular.module('proton.authentication')
             const req = $q.defer();
             if (pwd) {
 
+                tempStorage.setItem('plainMailboxPass', pwd);
                 passwords.computeKeyPassword(pwd, KeySalt)
                 .then((pwd) => pmcw.checkMailboxPassword(PrivateKey, pwd, AccessToken))
                 .then(
@@ -549,16 +553,21 @@ angular.module('proton.authentication')
                 this.user = user;
                 $rootScope.user = user;
 
+                const plainMailboxPass = tempStorage.getItem('plainMailboxPass');
+                tempStorage.removeItem('plainMailboxPass');
+
+                if (plainMailboxPass && !user.OrganizationPrivateKey) {
+                    if (!checkKeysFormat(user)) {
+                        AppModel.set('upgradingKeys', true);
+                        return upgradeKeys({mailboxPassword: plainMailboxPass, oldSaltedPassword: this.getPassword(), user})
+                            .then(() => Promise.resolve(user));
+                    }
+                }
+
                 return user;
             })
             .catch((error) => {
-                $state.go('support.message', {
-                    data: {
-                        title: 'Problem loading your account',
-                        content: 'ProtonMail encountered a problem loading your account. Please try again later',
-                        type: 'alert-danger'
-                    }
-                });
+                $state.go('support.message', { data: {} });
                 throw error;
             });
         },

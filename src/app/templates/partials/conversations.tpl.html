@@ -1,6 +1,7 @@
-<ng-include ng-if="!mobileMode" src="'templates/partials/toolbar-desktop.tpl.html'"></ng-include>
-<ng-include ng-if="mobileMode" src="'templates/partials/toolbar-mobile.tpl.html'"></ng-include>
-<div id="wrapper">
+<toolbar-desktop ng-if="!mobileMode"></toolbar-desktop>
+<toolbar-mobile ng-if="mobileMode"></toolbar-mobile>
+
+<div id="wrapper" ng-class="{hasElementsSelected: numberElementChecked}">
 
     <list-rows ng-if="displayType('rows')"></list-rows>
     <list-mobile ng-if="displayType('mobile')"></list-mobile>

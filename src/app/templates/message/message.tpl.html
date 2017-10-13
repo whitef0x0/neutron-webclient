@@ -6,7 +6,8 @@
     'details': message.toggleDetails === true,
     'draft': message.Type === 1,
     'sent': message.Type === 2 || message.Type === 3,
-    'hasSender': message.Sender.Address.length
+    'hasSender': message.Sender.Address.length,
+    'message-mode-plain': message.viewMode === 'plain'
 }">
 
     <div class="summary" toggle-message>
@@ -140,8 +141,7 @@
                         <div class="pm_dropdown wide right">
                             <button
                                 data-action-message="move"
-                                data-action-message-type="inbox"
-                                ng-hide="message.Type === 2 || message.Type === 3">
+                                data-action-message-type="inbox">
                                 <i class="fa fa-inbox"></i>
                                 <span translate translate-context="Action">Move to inbox</span>
                             </button>
@@ -205,26 +205,26 @@
             <time time-refreshed="{{ ::message.ExpirationTime }}"></time>
         </div>
 
-        <display-content-btn data-action="remote"></display-content-btn>
-        <display-content-btn data-action="embedded"></display-content-btn>
+        <message-extra></message-extra>
 
         <div class="frame message-frame" data-embedded-img-loader data-inject-message-media>
             <loader-tag ng-if="message.decrypting === true"></loader-tag>
-            <p class="alert alert-danger" ng-if="message.SpamScore === 100" translate translate-context="Info">This email seems to be from a ProtonMail address but came from outside our system and failed our authentication requirements. It may be spoofed or improperly forwarded!</p>
-            <p class="alert alert-danger" ng-if="message.SpamScore === 101" translate translate-context="Info">This email has failed its domain's authentication requirements. It may be spoofed or improperly forwarded!</p>
             <div class="alert alert-danger" role="alert" ng-if="message.failedDecryption">
                 <span class="pull-left fa fa-exclamation-triangle"></span>
                 <strong translate translate-context="Error">Decryption error</strong>
                 <div translate translate-context="Error">Decryption of this message's encryption content failed.</div>
             </div>
             <div
-                class="bodyDecrypted email"
+                class="bodyDecrypted email message-body-container"
                 ng-class="{'plain': message.isPlain}"
                 render-message-body
                 ng-if="message.viewMode === 'html' && !message.failedDecryption"
                 toggle-blockquote
                 mail-to scroll="true" ></div>
-            <pre class="email" ng-if="message.viewMode === 'plain' || message.failedDecryption" ng-bind="message.plainText()"></pre>
+
+            <pre
+                class="email message-body-container"
+                ng-if="message.viewMode === 'plain' || message.failedDecryption">{{message.plainText()}}</pre>
         </div>
 
         <list-attachments ng-if="message.Attachments.length" data-model="message"></list-attachments>

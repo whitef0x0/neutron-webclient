@@ -1,10 +1,10 @@
 module.exports = () => {
 
     const SELECTOR = {
-        form: '.loginForm-containter',
+        form: '.loginForm-container',
         error: '[id="error521"]',
         username: '.loginForm-input-username',
-        password: '.loginForm-input-password',
+        password: '.loginForm-input-password input',
         anchorHelp: '.loginForm-btn-help',
         buttonSubmit: '.loginForm-btn-submit',
         buttonModal: '.newBugReport-container',

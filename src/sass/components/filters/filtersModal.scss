@@ -1,3 +1,11 @@
+.filter-modal-input-name + .filter-modal-alert {
+	display: none
+}
+
+.filter-modal-input-name.ng-empty:not(:focus) ~ .filter-modal-alert {
+	display: block;
+}
+
 .filter-modal-conditions {
 	@include flexInline();
 	@include flexWrap();
@@ -64,9 +72,24 @@
 }
 .filter-modal-add-condition-input { width: 12rem }
 .filter-modal-add-condition-button {
-	margin-left: .5rem;
+	margin-left: -4px;
 	width: 40px;
-	background: $white;
+	background: $primary;
+	border-color: transparent;
+	color: $white;
+}
+
+.filter-modal-add-condition-button:hover {
+	background: $primary;
+	border-color: transparent;
+	color: $white;
+}
+
+.filter-modal-add-condition-button[disabled] {
+	background: darken(#f7f7f7, 5);
+	border-color: rgba(0,0,0,0.2);
+	opacity: 1;
+	color: rgba(0,0,0,0.4)
 }
 
 /* separator */
@@ -97,3 +120,79 @@
 .filter-modal-condition-settings > *,
 .filter-modal-condition-remove,
 .filter-modal-separator > * { margin:.2rem }
+
+.filter-modal-simple .filter-complex-only  {
+        display: none;
+}
+
+/* float switching to give each column there own rows doesn't work in flex boxes */
+body.appConfigBody-is-mobile .filter-modal-complex {
+
+    .sieve-script {
+        flex-direction: column;
+    }
+
+    .modal-dialog {
+        height: 100%;
+        min-height: 700px;
+    }
+
+}
+
+
+.filter-modal-complex {
+
+    .filter-simple-only {
+        display: none;
+    }
+
+    .modal-dialog,
+    .modal-content,
+    .modal-body,
+    .sieve-script,
+    .sieve-script #filterScriptContainer {
+        display: flex;
+    }
+
+    .modal-dialog,
+    .modal-content,
+    .modal-body  {
+        flex-direction: column;
+    }
+
+    .modal-dialog {
+        height: calc(100% - 6rem);
+        /*
+            Needed to make the responsive layout still work
+         */
+        min-height: 600px;
+    }
+
+    .modal-content,
+    .modal-body,
+    .sieve-script,
+    .sieve-script #filterScriptContainer {
+        flex-grow: 1;
+    }
+
+    .CodeMirror {
+        height: 100%;
+    }
+
+    /*
+     * Get out of the flex chain, we use position: relative instead of height: 100%, because for some reason, height doesn't
+     * work on iOS.
+     */
+    #filterScriptContainer {
+        position: relative;
+    }
+
+    #filterScript {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+
+}

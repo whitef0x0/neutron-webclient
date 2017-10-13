@@ -13,12 +13,10 @@
     height: calc(100% - 61px);  /* #pm_header-desktop height */
     background: $sidebar-background;
     position: relative;
-    overflow: hidden;
 
     .sidebar-btn-compose,
     .sidebar-btn-back {
         box-sizing: border-box;
-        height: 40px;
         min-height: 40px;
         margin-bottom: 10px;
         font-size: 12px;
@@ -41,7 +39,7 @@
         line-height: 16px;
         padding: 12px 0px 10px;
         text-decoration: none;
-        margin-bottom: 1em
+        margin-bottom: 15px
     }
 
     .sidebar-btn-compose > div,
@@ -56,6 +54,7 @@
     .sidebar-btn-back {
         border: 1px solid set-color($sidebar-background, rgba($white,.6));
         color: set-color($sidebar-background, $white);
+        text-align: left;
     }
 
     .sidebar-btn-compose {
@@ -134,7 +133,7 @@
 .sidebarApp-link {
     background: transparent;
     border: 0;
-    text-align: left
+    text-align: left;
 }
 
 .sidebarApp-container a {cursor: pointer}
@@ -144,7 +143,7 @@
     display: block;
     list-style-type: none;
     font-size: 14px;
-    margin: 0 -20px 10px -20px;
+    margin: 0 -20px 10px -25px;
 }
 
 .sidebarApp-menu a {cursor: pointer}
@@ -174,7 +173,7 @@
     width: 100%;
     height: 31px;
     text-decoration: none;
-    padding: 0 20px;
+    padding: 0 10px 0 20px;
     position: relative;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -191,6 +190,10 @@
     line-height: initial;
 }
 
+.sidebarApp-item .sidebarApp-label {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
 
 .sidebarApp-menu .menuLabel-link {
     padding: 0;
@@ -209,6 +212,34 @@
     text-align: center;
 }
 
+.navigationItem-title {
+    overflow: hidden;
+    padding-right: 10px;
+}
+
+.sidebarApp-item .navigationItem-aside {
+    position: relative; /*IE11*/
+    flex-grow: 1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-left: -10px; /* .navigationItem-title */
+    /* check _theme reset */
+    background: linear-gradient(to right, rgba($sidebar-background, 0) 0%, $sidebar-background 4px);
+    pointer-events: none;
+}
+
+.sidebarApp-item.active .navigationItem-aside {
+    /* check _theme reset */
+    background: linear-gradient(to right, rgba($sidebar-active, 0), $sidebar-active 4px)
+}
+
+.navigationItem-counter {
+    flex: 1;
+    margin-right: .3em;
+}
+
 .sidebarApp-menu .menuLabel-counter,
 .sidebarApp-item .navigationItem-counter {
     font-style: normal;
@@ -218,6 +249,7 @@
 
 .sidebarApp-item .navigationItem-counter,
 .menuLabel-item .menuLabel-counter { margin-left: .3em }
+
 
 .sidebarApp-item.active .navigationItem-item,
 .sidebarApp-item.active .sidebarApp-link,
@@ -260,7 +292,37 @@
         box-sizing: border-box
     }
 
-    .menuLabel-link { padding: 0 20px }
+    .menuLabel-link { padding: 0 25px 0px 15px }
+}
+
+/* DnD */
+
+.sidebarApp-container .navigationItem-item,
+.sidebarApp-container .menuLabel-link {
+
+    .sidebarApp-icon  { transition: all .2s ease-in }
+
+    .menuLabel-counter,
+    .navigationItem-aside { transition: opacity .2s ease-in }
+
+    &.ptdnd-drag-hover {
+        box-shadow: inset 1px 2px 4px rgba(0,0,0,0.2), inset 1px -2px 4px rgba(0,0,0,0.2);
+        background-color: darken($sidebar-background, 10);
+
+        .sidebarApp-icon,
+        .navigationItem-title,
+        .menuLabel-title { color: #FFF }
+
+        .sidebarApp-icon,
+        .menuLabel-icon { transform: scale(1.25) }
+
+        .menuLabel-counter,
+        .navigationItem-aside {
+            opacity: 0;
+            filter: blur(10px);
+            background-color: transparent;
+        }
+    }
 }
 
 .appConfigBody-is-mobile .sidebarApp-container {
@@ -277,6 +339,8 @@
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+
 
     .refresh { display: none }
 
@@ -285,7 +349,8 @@
     }
 
     .active .navigationItem-item,
-    .active .sidebarApp-link { background: transparent }
+    .active .sidebarApp-link,
+    .navigationItem-aside { background: transparent }
 
     .sidebarApp-divider {
         height: 1px;
@@ -306,9 +371,12 @@
 }
 
 @media (max-height: 500px) {
-    .sidebarApp-container { overflow: auto }
+    .sidebarApp-container {
+        display: block;
+        overflow: auto;
+    }
     [id="sidebarLabels"] {
-        height: initial;
+        height: auto;
         overflow: visible;
         min-height: auto;
         .mCSB_container_wrapper { position: relative }

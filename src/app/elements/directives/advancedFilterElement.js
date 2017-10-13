@@ -1,7 +1,24 @@
 angular.module('proton.elements')
-    .directive('advancedFilterElement', (gettextCatalog, messageApi, confirmModal, networkActivityTracker, cache, notify, eventManager, $state) => {
+    .directive('advancedFilterElement', ($stateParams, gettextCatalog, messageApi, confirmModal, networkActivityTracker, cache, notification, eventManager, $state) => {
+
+        const getClass = (name) => `advancedFilterElement-${name}`;
+        const ACTIVE_CLASS = 'active';
+        const BUTTONS_CLASS = {
+            [getClass('btn-small-to-large')]: () => $stateParams.sort === 'size',
+            [getClass('btn-large-to-small')]: () => $stateParams.sort === '-size',
+            [getClass('btn-old-to-new')]: () => $stateParams.sort === 'date',
+            [getClass('btn-new-to-old')]: () => !$stateParams.sort || $stateParams.sort === '-date',
+            [getClass('btn-show-all')]: () => (!$stateParams.sort || $stateParams.sort === '-date') && !$stateParams.filter,
+            [getClass('btn-unread')]: () => $stateParams.filter === 'unread',
+            [getClass('btn-read')]: () => $stateParams.filter === 'read'
+        };
         const clearState = (state) => state.replace('.element', '');
-        const switchState = (opt = {}) => $state.go(clearState($state.$current.name), _.extend({}, $state.params, { page: undefined, id: undefined }, opt));
+        const switchState = (opt = {}) => {
+            $state.go(clearState($state.$current.name), _.extend({}, $state.params, {
+                page: undefined,
+                id: undefined
+            }, opt));
+        };
 
         /**
          * Empty specific location
@@ -11,6 +28,7 @@ angular.module('proton.elements')
 
             const title = gettextCatalog.getString('Delete all', null, 'Title');
             const message = gettextCatalog.getString('Are you sure? This cannot be undone.', null, 'Info');
+            const errorMessage = gettextCatalog.getString('Empty request failed', null, 'Error shows when the empty folder request failed');
 
             if (['drafts', 'spam', 'trash'].indexOf(mailbox) === -1) {
                 return;
@@ -31,9 +49,10 @@ angular.module('proton.elements')
                                 if (data.Code === 1000) {
                                     cache.empty(mailbox);
                                     confirmModal.deactivate();
-                                    notify({ message: gettextCatalog.getString('Folder emptied', null), classes: 'notification-success' });
-                                    eventManager.call();
+                                    notification.success(gettextCatalog.getString('Folder emptied', null));
+                                    return eventManager.call();
                                 }
+                                throw new Error(data.Error || errorMessage);
                             });
                         networkActivityTracker.track(promise);
                     },
@@ -59,7 +78,7 @@ angular.module('proton.elements')
         /**
          * Clear current filter
          */
-        const clearFilter = () => switchState({ filter: undefined });
+        const clearFilter = () => switchState({ filter: undefined, sort: undefined });
 
         const toggleTrashSpam = () => switchState({
             trashspam: angular.isDefined($state.params.trashspam) ? undefined : 0
@@ -77,11 +96,14 @@ angular.module('proton.elements')
                     const action = e.target.getAttribute('data-action');
                     action && ACTIONS[action](e.target.getAttribute('data-action-arg'));
                 };
-                $btns.on('click', onClick);
 
-                scope.$on('$destroy', () => {
-                    $btns.off('click', onClick);
+                _.each($btns, (button) => {
+                    const cssClass = button.classList.item(0);
+                    BUTTONS_CLASS[cssClass] && BUTTONS_CLASS[cssClass]() && button.classList.add(ACTIVE_CLASS);
                 });
+
+                $btns.on('click', onClick);
+                scope.$on('$destroy', () => $btns.off('click', onClick));
             }
         };
     });

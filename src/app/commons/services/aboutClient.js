@@ -21,6 +21,12 @@ angular.module('proton.commons')
         };
         const isSafariMobile = () => $.ua.browser.name === 'Mobile Safari';
 
+        const isIE11 = () => $.ua.browser.name === 'IE' && $.ua.browser.major === '11';
+        const isEdge = () => $.ua.browser.name === 'Edge';
+        const isFirefox = () => $.ua.browser.name === 'Firefox';
+
+        const isFileSaverSupported = () => 'download' in document.createElement('a') || navigator.msSaveOrOpenBlob;
+
         const prngAvailable = () => {
             if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
                 return true;
@@ -63,14 +69,24 @@ angular.module('proton.commons')
             return OSName;
         };
 
+        const doNotTrack = () => {
+            return navigator.doNotTrack === '1' || navigator.doNotTrack === 'yes'
+            || navigator.msDoNotTrack === '1' || window.doNotTrack === '1';
+        };
+
         return {
+            doNotTrack,
             hasSessionStorage,
             hasCookie,
             getOS,
             getBrowser,
             getBrowserVersion,
+            isIE11,
+            isEdge,
             isSafari,
+            isFirefox,
             isSafariMobile,
+            isFileSaverSupported,
             prngAvailable
         };
     });

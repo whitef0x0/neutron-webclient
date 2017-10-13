@@ -1,0 +1,48 @@
+<table class="subscriptionSection-table">
+    <tbody class="subscriptionSection-tbody-plans">
+        <tr>
+            <td colspan="3">
+                <strong translate>Plans</strong>
+            </td>
+        </tr>
+        <tr
+            ng-repeat="plan in subscription.Plans | filter: { Type: 1 } track by plan.ID"
+            class="subscriptionSection-list">
+            <td colspan="2" class="subscriptionSection-item-title">{{ plan.Title }}</td>
+            <td class="subscriptionSection-item-price">{{ plan.Amount / 100 / plan.Cycle | currency: plan.Currency }}/mo</td>
+
+            <td class="subscriptionSection-item-addons">
+                <table class="subscriptionSection-addons" ng-if="plan.Name.indexOf('vpn') === -1">
+                    <tbody class="subscriptionSection-tbody-addons">
+                        <tr ng-repeat="(key, plan) in addons track by plan.ID">
+                            <td class="subscriptionSection-item-title">{{ plan.Title }}</td>
+                            <td class="subscriptionSection-item-price">{{ plan.Amount / 100 / plan.Cycle | currency: plan.Currency }}/mo</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+    </tbody>
+
+    <tbody class="subscriptionSection-tbody-billing">
+        <tr ng-hide="subscription.CouponCode === 'LIFETIME'">
+            <td>
+                <strong translate>Billing cycle end</strong>
+            </td>
+            <td>{{ subscription.PeriodEnd | readableTime }}</td>
+        </tr>
+        <tr>
+            <td>
+                <strong translate>Total price</strong> ({{ subscription.cycle }}) <span ng-if="subscription.CouponCode" translate>(with coupon)</span>
+            </td>
+            <td>{{ (subscription.Amount || 0) / 100 | currency: subscription.Currency }} ({{ subscription.cycle }})</td>
+        </tr>
+        <tr>
+            <td>
+                <strong translate>Payment</strong>
+            </td>
+            <td>
+                {{ method }} <a ui-sref="secured.payments" class="text-purple" translate>Manage</a>
+            </td>
+        </tr>
+    </tbody>
+</table>

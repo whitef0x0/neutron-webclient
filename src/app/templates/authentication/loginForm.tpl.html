@@ -1,7 +1,8 @@
 <form
     method="post"
     id="pm_login"
-    class="pm_panel alt pm_form loginForm-containter"
+    name="loginForm"
+    class="pm_panel alt pm_form loginForm-container"
     novalidate role="form"
     autocomplete="on"
     ng-submit="enterLoginPassword()"
@@ -29,34 +30,36 @@
         class="margin loginForm-input-username"
         required="" />
 
-    <input
-        maxlength="{{ ::maxPW }}"
-        autocapitalize="off"
-        autocorrect="off"
-        type="password"
-        ng-model="password"
-        tabindex="2"
-        id="password"
-        name="password"
+    <password
         class="margin loginForm-input-password"
-        required=""
-        placeholder-translate="Password" />
+        data-id="password"
+        data-name="password"
+        data-value="password"
+        data-tabindex="2"
+        data-form="loginForm"
+        placeholder-translate="Password"></password>
 
-    <div class="clearfix">
-        <a
-            class="pm_button link pull-left loginForm-btn-help"
-            ng-click="displayHelpModal()"
-            translate-context="Action"
-            translate-comment="link for login help"
-            translate>Need help?</a>
-        <button
-            id="login_btn"
-            type="submit"
-            tabindex="3"
-            class="pm_button primary pull-right loginForm-btn-submit"
-            ng-disabled="networkActivity.loading()"
-            translate-context="Action"
-            translate>Login</button>
+    <div class="loginForm-actions">
+        <div class="loginForm-actions-column">
+            <button
+                id="login_btn"
+                type="submit"
+                tabindex="3"
+                class="loginForm-actions-main pm_button primary pull-right loginForm-btn-submit"
+                ng-disabled="networkActivity.loading()"
+                translate-context="Action"
+                translate>Login</button>
+            <div class="loginForm-actions-row">
+                <button
+                    class="loginForm-btn-help"
+                    ng-click="displayHelpModal()"
+                    type="button"
+                    translate-context="Action"
+                    translate-comment="link for login help"
+                    translate>Need help?</button>
+                <signup-link class="loginForm-link-signup loginForm-actions-right"></signup-link>
+            </div>
+        </div>
     </div>
 
     <input type="hidden" id="hashed_pw" name="hashed_pw" />

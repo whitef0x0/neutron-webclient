@@ -1,77 +1,60 @@
-var _ = require('lodash');
-var util = require('util');
-var appVersion = '3.8.0';
-var apiVersion = '1';
-var dateVersion = new Date().toDateString();
-var clientID = 'Angular';
-var clientSecret = '00a11965ac0b47782ec7359c5af4dd79';
-var BROWSERS = ['PhantomJS', 'Chrome', 'Firefox', 'Safari'];
-var API_TARGETS = {
-    blue: 'https://protonmail.blue/api',
-    prod: 'https://mail.protonmail.com/api',
-    dev: 'https://dev.protonmail.com/api',
-    v2: 'https://v2.protonmail.com/api',
-    local: 'https://protonmail.dev/api',
-    build: '/api'
-};
-var autoprefixer = require('autoprefixer');
-var browserslist = require('./browserslist');
+const fs = require('fs');
+const path = require('path');
+const autoprefixer = require('autoprefixer');
+const serveStatic = require('serve-static');
+const loadTasks = require('load-grunt-tasks');
+const userConfig = require('./env/conf.build');
 
+const { getConfig, AUTOPREFIXER_CONFIG, PACKAGE } = require('./env/config');
+const { getCountry } = require('./env/translationsLoader');
 
-module.exports = function(grunt) {
-    var serveStatic = require('serve-static');
-
+module.exports = function (grunt) {
+    grunt.option('debug-app', grunt.cli.tasks.indexOf('deploy') === -1);
+    const { CONFIG, isDistRelease, syncPackage, getEnv } = getConfig(grunt);
     grunt.loadTasks('tasks');
-    require('load-grunt-tasks')(grunt);
+    loadTasks(grunt);
 
-    function apiUrl() {
-        var api = API_TARGETS.build;
-        var option = grunt.option('api');
-
-        if(option && API_TARGETS[option]) {
-            api = API_TARGETS[option];
+    const getGhostModeBrowserSync = () => {
+        if (grunt.option('no-ghost')) {
+            return false;
         }
 
-        return api;
-    }
+        return {
+            clicks: true,
+            forms: true,
+            scroll: true
+        };
+    };
 
-    // Expose each supported browser as a command-line option
-    function browsers() {
-        var selected = _.filter(BROWSERS, function(browser) {
-            return grunt.option(browser.toLowerCase());
-        });
 
-        return _.isEmpty(selected) ? [BROWSERS[0]] : selected;
-    }
-
-    var userConfig = require('./conf.build.js');
-
-    var taskConfig = {
-        pkg: grunt.file.readJSON('package.json'),
+    const taskConfig = {
+        pkg: PACKAGE,
         meta: {
-            banner: "/**\n" +
+            banner: '/**\n' +
             " * <%= pkg.name %> - <%= pkg.version %> - <%= grunt.template.today('yyyy-mm-dd HH:MM:ss') %>\n" +
-            " *\n" +
+            ' *\n' +
             " * copyright <%= grunt.template.today('yyyy') %> <%= pkg.author %>\n" +
-            " * <%= pkg.license %>\n" +
-            " */\n"
+            ' * <%= pkg.license %>\n' +
+            ' */\n'
         },
 
         browserSync: {
-          default_options: {
-            bsFiles: {
-              src: [
-                  "<%= build_dir %>/assets/application.css",
-                  "<%= build_dir %>/src/app"
-              ]
-            },
-            options: {
-              open: !grunt.option('no-open'),
-              watchTask: true,
-              proxy: "localhost:8080"
+            default_options: {
+                bsFiles: {
+                    src: [
+                        '<%= build_dir %>/assets/application.css',
+                        '<%= build_dir %>/src/app'
+                    ]
+                },
+                options: {
+                    open: !grunt.option('no-open'),
+                    watchTask: true,
+                    proxy: 'localhost:8080',
+                    ghostMode: getGhostModeBrowserSync()
+
+                }
             }
-          }
-      },
+        },
 
         notify_hooks: {
             options: {
@@ -88,41 +71,19 @@ module.exports = function(grunt) {
                 dest: 'src/app/config.js'
             },
             dev: {
-                constants: {
-                    CONFIG: {
-                        debug: true,
-                        apiUrl: apiUrl(),
-                        app_version: appVersion,
-                        api_version: apiVersion,
-                        date_version: dateVersion,
-                        clientID: clientID,
-                        clientSecret: clientSecret,
-                        year: (new Date()).getFullYear()
-                    }
-                }
+                constants: { CONFIG }
             },
             prod: {
-                constants: {
-                    CONFIG: {
-                        debug: false,
-                        apiUrl: apiUrl(),
-                        app_version: appVersion,
-                        api_version: apiVersion,
-                        date_version: dateVersion,
-                        clientID: clientID,
-                        clientSecret: clientSecret,
-                        year: (new Date()).getFullYear()
-                    }
-                }
+                constants: { CONFIG }
             }
         },
 
         clean: {
             build: [
-                "<%= build_dir %>"
+                '<%= build_dir %>'
             ],
             dist: [
-                "<%= compile_dir %>"
+                '<%= compile_dir %>'
             ]
         },
 
@@ -136,12 +97,12 @@ module.exports = function(grunt) {
                         'src/app/*.js',
                         'src/app/**/*.js',
                         'src/app/**/**/*.js',
-                        '!src/app/libraries/**/*.js',
-                        'src/app/libraries/pmcrypto.js', // Do babel on pmcrypto
+                        '!src/app/translations.js',
+                        '!src/libraries/**/*.js',
                         '!src/app/templates/templates-app.js'
                     ],
-                    dest: "<%= build_dir %>",
-                    cwd: ".",
+                    dest: '<%= build_dir %>',
+                    cwd: '.',
                     filter: 'isFile',
                     expand: true
                 }]
@@ -150,12 +111,12 @@ module.exports = function(grunt) {
                 files: [{
                     src: [
                         '<%= build_dir %>/src/app/**/*.js',
-                        '!<%= build_dir %>/src/app/libraries/**/*.js',
-                        '<%= build_dir %>/src/app/libraries/pmcrypto.js', // Do babel on pmcrypto
+                        '!<%= build_dir %>/src/libraries/**/*.js',
+                        '!<%= build_dir %>/src/app/translations.js',
                         '!<%= build_dir %>/src/app/templates/templates-app.js'
                     ],
-                    dest: ".",
-                    cwd: ".",
+                    dest: '.',
+                    cwd: '.',
                     filter: 'isFile',
                     expand: true
                 }]
@@ -166,16 +127,16 @@ module.exports = function(grunt) {
             options: {
                 hostname: '*',
                 port: 8080,
-                middleware: function(connect, options, middlewares) {
-                    var base = options.base[0];
+                middleware(connect, options) {
+                    const base = options.base[0];
 
                     return [
                         serveStatic(base),
-                        function(req, res, next) {
+                        function (req, res) {
                             // no file found; send app.html
-                            var file = base + '/app.html';
+                            const file = base + '/app.html';
                             if (grunt.file.exists(file)) {
-                                require('fs').createReadStream(file).pipe(res);
+                                fs.createReadStream(file).pipe(res);
                                 return;
                             }
                             res.statusCode(404);
@@ -199,28 +160,44 @@ module.exports = function(grunt) {
         },
 
         copy: {
+            i18n: {
+                files: [{
+                    src: ['*.json'],
+                    dest: '<%= build_dir %>/i18n/',
+                    cwd: 'src/i18n',
+                    expand: true
+                }]
+            },
+            i18n_compile: {
+                files: [{
+                    src: ['*.json'],
+                    dest: '<%= compile_dir %>/i18n/',
+                    cwd: 'src/i18n',
+                    expand: true
+                }]
+            },
             build_app_assets: {
                 files: [{
-                    src: ["**"],
-                    dest: "<%= build_dir %>/assets/",
-                    cwd: "src/assets",
+                    src: ['**'],
+                    dest: '<%= build_dir %>/assets/',
+                    cwd: 'src/assets',
                     expand: true
                 }]
             },
             build_appjs: {
                 files: [{
-                    src: ["<%= app_files.js %>"],
-                    dest: "<%= build_dir %>",
-                    cwd: ".",
+                    src: ['<%= app_files.js %>'],
+                    dest: '<%= build_dir %>',
+                    cwd: '.',
                     filter: 'isFile',
                     expand: true
                 }]
             },
             build_vendorjs: {
                 files: [{
-                    src: ["<%= vendor_files.js %>"],
-                    dest: "<%= build_dir %>/vendor",
-                    cwd: ".",
+                    src: ['<%= vendor_files.js %>'],
+                    dest: '<%= build_dir %>/vendor',
+                    cwd: '.',
                     expand: true,
                     flatten: true,
                     nonull: true
@@ -228,16 +205,16 @@ module.exports = function(grunt) {
             },
             compile_assets: {
                 files: [{
-                    src: ["**", "!*.css"],
-                    dest: "<%= compile_dir %>/assets",
-                    cwd: "<%= build_dir %>/assets",
+                    src: ['**', '!*.css'],
+                    dest: '<%= compile_dir %>/assets',
+                    cwd: '<%= build_dir %>/assets',
                     expand: true
                 }]
             },
             build_external: {
                 files: [{
-                    src: ["<%= external_files.openpgp %>", "<%= external_files.manifest %>"],
-                    dest: "./<%= build_dir %>/",
+                    src: ['<%= external_files.openpgp %>', '<%= external_files.manifest %>'],
+                    dest: './<%= build_dir %>/',
                     expand: true,
                     flatten: true,
                     nonull: true
@@ -245,8 +222,8 @@ module.exports = function(grunt) {
             },
             compile_external: {
                 files: [{
-                    src: ["<%= external_files.openpgp %>", "<%= external_files.manifest %>"],
-                    dest: "./<%= compile_dir %>/",
+                    src: ['<%= external_files.openpgp %>', '<%= external_files.manifest %>'],
+                    dest: './<%= compile_dir %>/',
                     expand: true,
                     flatten: true,
                     nonull: true
@@ -254,33 +231,42 @@ module.exports = function(grunt) {
             },
             build_htaccess: {
                 files: [{
-                    src: [".htaccess"],
-                    filter: "isFile",
+                    src: ['.htaccess'],
+                    filter: 'isFile',
                     expand: true,
-                    dest: "<%= build_dir %>",
-                    cwd: "./src",
+                    dest: '<%= build_dir %>',
+                    cwd: './src',
                     nonull: true
                 }]
             },
             compile_htaccess: {
                 files: [{
-                    src: [".htaccess"],
-                    filter: "isFile",
+                    src: ['.htaccess'],
+                    filter: 'isFile',
                     expand: true,
-                    dest: "<%= compile_dir %>",
-                    cwd: "./src",
+                    dest: '<%= compile_dir %>',
+                    cwd: './src',
                     nonull: true
                 }]
             },
+            fonts: {
+                files: [{
+                    src: ['<%= vendor_files.fonts %>'],
+                    dest: '<%= build_dir %>/assets/fonts',
+                    flatten: true,
+                    cwd: '.',
+                    expand: true
+                }]
+            }
         },
 
         sass: {
             build: {
                 options: {
-                    loadPath: "<%= vendor_files.sass_include_dirs %>"
+                    loadPath: '<%= vendor_files.sass_include_dirs %>'
                 },
                 files: {
-                    "<%= build_dir %>/assets/application.css": "<%= app_files.sass %>"
+                    '<%= build_dir %>/assets/application.css': '<%= app_files.sass %>'
                 }
             }
         },
@@ -288,19 +274,38 @@ module.exports = function(grunt) {
         concat: {
             build_css: {
                 files: {
-                    '<%= build_dir %>/assets/vendor.css': ['<%= vendor_files.css %>']
+                    '<%= build_dir %>/assets/vendor.css': ['<%= build_dir %>/assets/vendor.css', '<%= vendor_files.css %>']
+                },
+                nonull: true
+            },
+            build_js: {
+                options: {
+                    sourceMap: false,
+                    banner: '<%= meta.banner %>'
+                },
+                files: {
+                    '<%= build_dir %>/vendor.js': [
+                        '<%= vendor_files.js %>',
+                        '!src/libraries/mailparser.js',
+                        'src/libraries/*.js'
+                    ]
                 },
                 nonull: true
             },
             compile_js: {
                 options: {
                     sourceMap: true,
-                    banner: "<%= meta.banner %>"
+                    banner: '<%= meta.banner %>'
                 },
                 files: {
-                    '<%= compile_dir %>/assets/app.js': ['<%= vendor_files.js %>',
-                    '<%= build_dir %>/src/app/**/index.js',
-                    '<%= build_dir %>/src/app/**/*.js',
+                    '<%= compile_dir %>/assets/vendor.js': [
+                        '<%= vendor_files.js %>',
+                        '!<%= build_dir %>/src/libraries/mailparser.js',
+                        '<%= build_dir %>/src/libraries/*.js'
+                    ],
+                    '<%= compile_dir %>/assets/app.js': [
+                        '<%= build_dir %>/src/app/**/index.js',
+                        '<%= build_dir %>/src/app/**/*.js'
                     ]
                 },
                 nonull: true
@@ -308,28 +313,28 @@ module.exports = function(grunt) {
         },
         cssmin: {
             compile: {
-                src: ["<%= build_dir %>/assets/**/*.css"],
-                dest: "<%= compile_dir %>/assets/app.css"
+                src: ['<%= build_dir %>/assets/**/*.css'],
+                dest: '<%= compile_dir %>/assets/app.css'
             }
         },
         postcss: {
-                options: {
-                    map: true,
-                    processors: [
-                        autoprefixer(browserslist)
-                    ]
-                },
-                dist: {
-                    src: ["<%= build_dir %>/**/*.css"],
-                }
+            options: {
+                map: true,
+                processors: [
+                    autoprefixer(AUTOPREFIXER_CONFIG)
+                ]
+            },
+            dist: {
+                src: ['<%= build_dir %>/**/*.css']
+            }
         },
         html2js: {
             app: {
                 options: {
-                    base: "src/app"
+                    base: 'src/app'
                 },
-                src: ["<%= app_files.atpl %>"],
-                dest: "<%= build_dir %>/src/app/templates/templates-app.js"
+                src: ['<%= app_files.atpl %>'],
+                dest: '<%= build_dir %>/src/app/templates/templates-app.js'
             }
         },
 
@@ -337,7 +342,7 @@ module.exports = function(grunt) {
             build: {
                 options: {
                     keepAlive: true,
-                    path: "./node_modules/.bin/"
+                    path: './node_modules/.bin/'
                 }
             }
         },
@@ -358,32 +363,32 @@ module.exports = function(grunt) {
             options: {
                 mangle: false,
                 sourceMap: true,
-                sourceMapIncludeSources : true,
-                sourceMapIn : '<%= compile_dir %>/assets/app.js.map',
+                sourceMapIncludeSources: true,
                 preserveComments: false,
                 report: 'min'
             },
             compile: {
                 options: {
-                    banner: "<%= meta.banner %>"
+                    banner: '<%= meta.banner %>'
                 },
                 files: {
-                    '<%= compile_dir %>/assets/app.js': '<%= compile_dir %>/assets/app.js'
+                    '<%= compile_dir %>/assets/app.js': '<%= compile_dir %>/assets/app.js',
+                    '<%= compile_dir %>/assets/vendor.js': '<%= compile_dir %>/assets/vendor.js'
                 }
             }
         },
 
         index: {
             options: {
-                apiUrl: apiUrl()
+                apiUrl: CONFIG.apiUrl
             },
             build: {
                 dir: '<%= build_dir %>',
                 src: [
                     '<%= build_dir %>/openpgp.min.js',
+                    '<%= build_dir %>/vendor.js',
                     '<%= build_dir %>/src/**/index.js',
                     '<%= build_dir %>/src/**/*.js',
-                    '<%= vendor_files.included_js %>',
                     '<%= build_dir %>/assets/application.css',
                     '<%= build_dir %>/assets/vendor.css'
                 ],
@@ -394,6 +399,7 @@ module.exports = function(grunt) {
                 dir: '<%= compile_dir %>',
                 src: [
                     '<%= compile_dir %>/openpgp.min.js',
+                    '<%= compile_dir %>/assets/vendor.js',
                     '<%= compile_dir %>/assets/app.js',
                     '<%= compile_dir %>/assets/app.css'
                 ],
@@ -407,6 +413,7 @@ module.exports = function(grunt) {
                     match: [{
                         'assets/app.css': '<%= compile_dir %>/assets/app.css',
                         'assets/app.js': '<%= compile_dir %>/assets/app.js',
+                        'assets/vendor.js': '<%= compile_dir %>/assets/vendor.js',
                         'openpgp.min.js': '<%= build_dir %>/openpgp.min.js', // 'build' is correct here
                         'openpgp.worker.min.js': '<%= build_dir %>/openpgp.worker.min.js' // 'build' is correct here
                     }],
@@ -415,6 +422,7 @@ module.exports = function(grunt) {
                 files: { // This breaks if the 'cwd' option is used. I don't know why.
                     src: [
                         '<%= compile_dir %>/app.html',
+                        '<%= compile_dir %>/assets/vendor.js',
                         '<%= compile_dir %>/assets/app.js',
                         '<%= compile_dir %>/openpgp.min.js',
                         '<%= compile_dir %>/openpgp.worker.min.js'
@@ -429,38 +437,38 @@ module.exports = function(grunt) {
             },
 
             html: {
-                files: ["<%= app_files.html %>"],
-                tasks: ["index:build"]
+                files: ['<%= app_files.html %>'],
+                tasks: ['index:build']
             },
 
             sass: {
                 files: [
-                    "src/sass/**/*.scss"
+                    'src/sass/**/*.scss'
                 ],
-                tasks: ["sass:build"]
+                tasks: ['sass:build']
             },
 
             css: {
-                files: ["<%= build_dir %>/assets/**/*.css"]
+                files: ['<%= build_dir %>/assets/**/*.css']
             },
 
             tpls: {
-                files: ["<%= app_files.atpl %>"],
-                tasks: ["html2js"]
+                files: ['<%= app_files.atpl %>'],
+                tasks: ['html2js']
             },
 
             jssrc: {
-                files: ["<%= app_files.js %>"],
-                tasks: ['changed:babel:watch', "index:build"]
+                files: ['<%= app_files.js %>'],
+                tasks: ['changed:babel:watch', 'index:build']
             },
 
             assets: {
-                files: ["src/assets/**/*"],
-                tasks: ["copy:build_app_assets"]
+                files: ['src/assets/**/*'],
+                tasks: ['copy:build_app_assets']
             },
 
             gruntfile: {
-                files: "Gruntfile.js",
+                files: 'Gruntfile.js',
                 tasks: [],
                 options: {
                     livereload: false
@@ -471,9 +479,9 @@ module.exports = function(grunt) {
 
         shell: {
             setup_dist: {
-                command: function() {
-                    var commands = [];
-                    var option = 'deploy3';
+                command() {
+                    const commands = [];
+                    let option = 'deploy3';
 
                     if (grunt.option('dest')) {
                         option = grunt.option('dest');
@@ -488,9 +496,9 @@ module.exports = function(grunt) {
                 }
             },
             push: {
-                command: function() {
-                    var commands = [];
-                    var option = 'deploy3';
+                command() {
+                    const commands = [];
+                    let option = 'deploy3';
 
                     if (grunt.option('dest')) {
                         option = grunt.option('dest');
@@ -509,8 +517,54 @@ module.exports = function(grunt) {
             },
             lint: {
                 command: 'npm run lint'
+            },
+            i18n: {
+                command() {
+
+                    if (isDistRelease()) {
+                        return 'npm run i18n';
+                    }
+                    return 'echo "no i18n for dev/blue etc."';
+                }
+            },
+            syncPackage: {
+                command() {
+                    if (syncPackage()) {
+                        const DEFAULT_DEST = 'v3';
+                        return [
+                            'echo ""',
+                            'echo "Update package.json"',
+                            'git add package.json',
+                            'git commit -m "New app version :tada:"',
+                            `git push origin ${DEFAULT_DEST}`
+                        ].join('&&');
+                    }
+
+                    return 'echo "No update to package.json"';
+                }
             }
 
+        },
+
+        replace: {
+            build: {
+                options: {
+                    patterns: [
+                        {
+                            match: /NODE_ENV/g,
+                            replacement: getEnv()
+                        }
+                    ]
+                },
+                files: [
+                    {
+                        expand: true,
+                        flatten: true,
+                        src: [ '<%= build_dir %>/src/app/app.js' ],
+                        dest: '<%= build_dir %>/src/app/'
+                    }
+                ]
+            }
         },
 
         wait: {
@@ -535,11 +589,19 @@ module.exports = function(grunt) {
         nggettext_compile: {
             all: {
                 options: {
-                    module: 'proton'
+                    format: 'json'
                 },
-                files: {
-                    'src/app/translations.js': ['po/*.po']
-                }
+                files: [{
+                    expand: true,
+                    src: 'po/*.po',
+                    flatten: true,
+                    dest: 'src/i18n/',
+                    ext: '.json',
+                    rename(dest, matchedSrcPath) {
+                        const [ lang, ext ] = matchedSrcPath.split('.');
+                        return path.join(dest, `${lang}_${getCountry(lang)}.${ext}`);
+                    }
+                }]
             }
         }
     };
@@ -559,14 +621,19 @@ module.exports = function(grunt) {
         'delta'
     ]);
 
-    grunt.registerTask('deploy', [
+    const deployTasks = [
         'clean:dist', // clean dist directory
+        'nggettext_extract', // extract key inside JS and HTML files
+        'nggettext_compile', // transform po file to translations.js
         'shell:setup_dist',
         'ngconstant:prod', // set prod variables
         'shell:lint',
         'build',
+        'replace:build',
         'copy:compile_assets', // copy assets
         'copy:compile_htaccess', // copy htaccess file
+        'copy:i18n',
+        'copy:i18n_compile',
         'cssmin', // minify CSS
         'concat:compile_js', // concat JS
         'uglify', // minify JS
@@ -574,22 +641,28 @@ module.exports = function(grunt) {
         'index:compile', // index CSS and JS
         'cachebreaker', // Append an MD5 hash of file contents to JS and CSS references
         'shell:push', // push code to deploy branch
-        'wait:push'
-    ]);
+        'wait:push',
+        'shell:i18n',
+        'shell:syncPackage'
+    ];
+
+    const listTasksDeploy = isDistRelease() ? deployTasks : deployTasks.filter((key) => key !== 'nggettext_extract');
+    grunt.registerTask('deploy', listTasksDeploy);
 
     grunt.registerTask('build', [
         'clean:build',
-        'nggettext_extract', // extract key inside JS and HTML files
-        'nggettext_compile', // transform po file to translations.js
         'html2js',
         'sass:build',
         'concat:build_css',
         'postcss',
         'copy:build_app_assets',
         'copy:build_appjs',
+        'concat:build_js',
         'copy:build_vendorjs',
         'copy:build_external',
         'copy:build_htaccess',
+        'copy:i18n',
+        'copy:fonts',
         'ngAnnotate',
         'babel:dist',
         'index:build'

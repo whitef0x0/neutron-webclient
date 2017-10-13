@@ -1,10 +1,14 @@
 angular.module('proton.attachments')
-    .factory('attachmentModel', ($q, attachmentApi, AttachmentLoader, authentication, $rootScope, embedded, notify, networkActivityTracker, composerRequestModel, attachmentDownloader) => {
+    .factory('attachmentModel', ($q, attachmentApi, AttachmentLoader, authentication, $rootScope, embedded, notification, networkActivityTracker, composerRequestModel, attachmentDownloader, gettextCatalog) => {
 
         const queueMessage = {};
         let MAP_ATTACHMENTS = {};
         const EVENT_NAME = 'attachment.upload';
-        const notifyError = (message) => notify({ message, classes: 'notification-danger' });
+        const I18N = {
+            ERROR_UPLOAD: gettextCatalog.getString('Error during file upload', null, 'Compose message'),
+            ERROR_ENCRYPT: gettextCatalog.getString('Error encrypting attachment', null, 'Compose message')
+        };
+
         const dispatch = (type, data) => $rootScope.$emit(EVENT_NAME, { type, data });
 
         /**
@@ -152,7 +156,7 @@ angular.module('proton.attachments')
             const promises = _.map(queue, ({ file, isEmbedded }, i, list) => {
                 // required for BE to get a cid-header
                 file.inline = +(isEmbedded && action === 'inline');
-                return addAttachment(file, message, isEmbedded, list.length, cid);
+                return addAttachment(file, message, list.length, cid);
             });
 
             message.uploading = promises.length;
@@ -293,11 +297,10 @@ angular.module('proton.attachments')
          * Add a new attachment, upload it to the server
          * @param {File} file
          * @param {Message} message
-         * @param {Boolean} insert Embedded or not
          * @param {Number} total Total of attachments
          * @param {String} cid Content ID
          */
-        function addAttachment(file, message, insert = true, total = 1, cid = '') {
+        function addAttachment(file, message, total = 1, cid = '') {
             const tempPacket = {
                 filename: file.name,
                 uploading: true,
@@ -313,7 +316,7 @@ angular.module('proton.attachments')
 
             message.attachmentsToggle = true;
 
-            return AttachmentLoader.load(file, message.From.Keys[0].PublicKey, authentication.getPrivateKeys(message.From.ID))
+            return AttachmentLoader.load(file, message.From.Keys[0].PublicKey)
                 .then((packets) => {
                     return attachmentApi.upload(packets, message, tempPacket, total)
                         .then(({ attachment, sessionKey, REQUEST_ID, isAborted, isError }) => {
@@ -329,12 +332,12 @@ angular.module('proton.attachments')
                         })
                         .catch((err) => {
                             console.error(err);
-                            notifyError('Error during file upload');
+                            notification.error(I18N.ERROR_UPLOAD);
                         });
                 })
                 .catch((err) => {
                     console.error(err);
-                    notifyError('Error encrypting attachment');
+                    notification.error(I18N.ERROR_ENCRYPT);
                     throw err;
                 });
         }

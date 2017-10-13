@@ -3,16 +3,17 @@ angular.module('proton.sidebar')
 
         const CLASS_ACTIVE = 'active';
         const CLASS_SPIN = 'spinMe';
-        const STATES = sidebarModel.getStateConfig();
-
         const template = (key, { state, label, icon = '' }) => {
             const iconClassName = `sidebarApp-icon navigationItem-icon fa ${icon}`.trim();
             const opt = { sort: null, filter: null, page: null };
-            return dedentTpl(`<a href="${$state.href(state, opt)}" title="${label}" data-state="${key}" class="navigationItem-item">
+            const dropzone = (key !== 'allmail') ? `data-pt-dropzone-item="${key}"` : '';
+            return dedentTpl(`<a href="${$state.href(state, opt)}" title="${label}" data-label="${label}" data-state="${key}" class="navigationItem-item" ${dropzone}>
                 <i class="${iconClassName}"></i>
                 <span class="navigationItem-title">${label}</span>
-                <em class="navigationItem-counter"></em>
-                <button class="fa fa-repeat pull-right refresh navigationItem-btn-refresh"></button>
+                <div class="navigationItem-aside">
+                    <em class="navigationItem-counter"></em>
+                    <button class="fa fa-repeat refresh navigationItem-btn-refresh"></button>
+                </div>
             </a>`);
         };
 
@@ -40,19 +41,36 @@ angular.module('proton.sidebar')
             template: '<li class="navigationItem-container"></li>',
             link(scope, el, { key }) {
                 let id;
+                const STATES = sidebarModel.getStateConfig();
                 const config = STATES[key];
                 const unsubscribe = [];
                 const render = () => (el[0].innerHTML = template(key, config));
                 const updateCounter = () => {
-                    const $counter = el[0].querySelector('.navigationItem-counter');
-                    $counter.textContent = sidebarModel.unread(key);
+                    const $anchor = el[0].querySelector('.navigationItem-item');
+                    const $counter = $anchor.querySelector('.navigationItem-counter');
+                    const total = sidebarModel.unread(key);
+                    $anchor.title = `${$anchor.getAttribute('data-label')} ${total}`.trim();
+                    $counter.textContent = total;
+                };
+                const updateActive = () => {
+                    const { states = [], state = '' } = config;
+                    const addActive = () => el[0].classList.add(CLASS_ACTIVE);
+
+                    // Sent and Drafts have each 2 states
+                    if (states.length && _.find(states, (route) => $state.includes(route))) {
+                        return addActive();
+                    }
+
+                    if ($state.includes(state)) {
+                        return addActive();
+                    }
+
+                    el[0].classList.remove(CLASS_ACTIVE);
                 };
 
-                // Check if we open the current state, mark it as active
-                $state.includes(config.state) && el[0].classList.add(CLASS_ACTIVE);
+                updateActive(); // Check if we open the current state, mark it as active
                 render();
                 updateCounter();
-
 
                 // Update the counter when we load then
                 unsubscribe.push($rootScope.$on('app.cacheCounters', (e, { type }) => {
@@ -66,11 +84,7 @@ angular.module('proton.sidebar')
 
                 // Check the current state to set the current one as active
                 unsubscribe.push($rootScope.$on('$stateChangeSuccess', () => {
-                    if ($state.includes(config.state)) {
-                        return el[0].classList.add(CLASS_ACTIVE);
-                    }
-
-                    el[0].classList.remove(CLASS_ACTIVE);
+                    updateActive();
                 }));
 
                 const onClick = () => {

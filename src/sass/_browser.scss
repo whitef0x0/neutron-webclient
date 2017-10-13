@@ -1,10 +1,5 @@
 // All versions of IE
 .ua-ie {
-    #pm_header {
-        .pm_dropdown {
-            top: 200%;
-        }
-    }
     body.scroll {
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch;
@@ -131,16 +126,6 @@
     .pm_buttons a {
         overflow: hidden;
     }
-    header#pm_header .pull-right {
-        height: 61px;
-        overflow: hidden;
-        a {
-            float: left;
-        }
-        .pm_button.primary {
-            margin-top: 14px;
-        }
-    }
 }
 
 input:invalid,
@@ -156,6 +141,10 @@ input:-moz-ui-invalid {
 .ua-safari {
     #conversation-list-rows .conversation .subject .pm_labels,
     #conversation-view .message > div.summary .labels .pm_labels { top: 0 }
+}
+// IE11
+.ua-ie-11 {
+    #conversation-list-rows .conversation .subject { display: inline-block }
 }
 
 /* 2FA inputs*/

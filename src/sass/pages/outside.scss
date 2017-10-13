@@ -136,6 +136,13 @@ body#eo-reply {
 	}
 }
 
+/* cf. renderMessageBody */
+@keyframes nodeInserted {
+    from { opacity: 0.99; }
+    to { opacity: 1; }
+}
+
+
 .outside {
 	padding: 4rem 100px;
 	font-size: 1em;
@@ -179,39 +186,15 @@ body#eo-reply {
 			}
 		}
 	}
+	.bodyDecrypted {
+		animation: nodeInserted;
+		animation-duration: 0.001s;
+	}
 	#attachmentArea {
 		border-top: 1px solid $border;
 		border-bottom: none;
 		padding-left: 35px;
 		padding-right: 35px;
-	}
-	.display-image,
-	.display-embedded {
-	    margin: 0px 0px -1rem 10px;
-	    line-height: 35px;
-	    height: auto;
-	    width: auto;
-	    background: $white;
-	    box-sizing: initial;
-	    text-transform: uppercase;
-		border: 1px solid $border;
-        border-radius: 2px;
-        border-bottom-right-radius: 0;
-        border-bottom-left-radius: 0;
-        border-bottom: 0;
-	    -webkit-transition: padding .1s ease;
-	       -moz-transition: padding .1s ease;
-	        -ms-transition: padding .1s ease;
-	         -o-transition: padding .1s ease;
-	            transition: padding .1s ease;
-		text-decoration: none;
-        color: $primary;
-        &:focus {
-            background: $white;
-        }
-        &:hover {
-			text-decoration: underline;
-	    }
 	}
 	.message-metadata {
 		margin-bottom: 0;

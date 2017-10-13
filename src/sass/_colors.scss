@@ -1,6 +1,6 @@
-&.secure:not(.light) {
-    background: $body-background !important; /* override general .body */
-    background-size: cover !important;
+.secure:not(.light) {
+    background: $body-background;
+    background-size: $body-background-size;
 
     &:before {
         position: absolute;

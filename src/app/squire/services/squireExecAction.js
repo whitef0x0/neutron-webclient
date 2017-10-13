@@ -59,7 +59,7 @@ angular.module('proton.squire')
             });
 
             const newSelection = angular.element(editor.getSelection().commonAncestorContainer);
-            (newSelection.closest('a')[0] || newSelection.find('a')[0]).textContent = title;
+            (newSelection.closest('a')[0] || newSelection.find('a')[0]).textContent = title || link;
         };
 
         /**
@@ -125,8 +125,7 @@ angular.module('proton.squire')
                 return;
             }
 
-            const actions = Object
-                .keys(tests.tests)
+            const actions = Object.keys(tests.tests)
                 .filter((key) => tests.tests[key]);
 
             // Remove an action: ex italic

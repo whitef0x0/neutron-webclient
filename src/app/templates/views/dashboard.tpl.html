@@ -1,5 +1,5 @@
 <div id="pm_settings">
-    <div class="settings">
+    <div class="settings settingsDashboard-container">
         <div class="row">
             <section class="pm_form">
                 <div class="pm_grid flex flex-row">
@@ -10,143 +10,22 @@
                                 translate
                                 translate-context="Title">Overview</h2>
                         </header-block>
-                        <div class="well pm-flex-content-fillHeight">
-                            <div class="pm_table">
-                                <table class="plain">
-                                    <tr>
-                                        <th style="width: 6rem" translate-context="Title" translate>Username</th>
-                                        <td>
-                                            <strong>{{ user.Name }}</strong>
-                                        </td>
-                                        <td style="width: 8rem" class="text-right actions"></td>
-                                    </tr>
-                                    <!-- <tr ng-show="keyPhase > 3">
-                                        <th translate-context="Title" translate>Members</th>
-                                        <td>
-                                            <strong ng-hide="organization.PlanName === 'free'"  translate-comment="dashboard page. how many members exist for an organization as well as the total number allowed." translate>{{ organization.UsedMembers }} of {{ organization.MaxMembers }}</strong>
-                                            <strong ng-show="organization.PlanName === 'free'">0</strong>
-                                        </td>
-                                        <td class="text-right actions">
-                                            <a ui-sref="secured.members" class="pm_button link" ng-hide="subscription.Name === 'free'" translate-context="Action" translate>Manage</a>
-                                            <a href="#" class="pm_button link" ng-show="subscription.Name === 'free'" ng-click="scrollToPlans()" translate-context="Action" translate>Upgrade</a>
-                                        </td>
-                                    </tr> -->
-                                    <tr>
-                                        <th translate-context="Title" translate>Domains</th>
-                                        <td>
-                                            <strong ng-hide="organization.PlanName === 'free'"  translate-comment="dashboard page. how many domains exist for an organization as well as the total number allowed." translate>{{ organization.UsedDomains }} of {{ organization.MaxDomains }}</strong>
-                                            <strong ng-show="organization.PlanName === 'free'">0</strong>
-                                        </td>
-                                        <td class="text-right actions">
-                                            <a ui-sref="secured.domains" class="pm_button link" ng-hide="subscription.Name === 'free'" translate-context="Action" translate>Manage</a>
-                                            <a href="#" class="pm_button link" ng-show="subscription.Name === 'free'" ng-click="scrollToPlans()" translate-context="Action" translate>Upgrade</a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th translate-context="Title" translate>Addresses</th>
-                                        <td>
-                                            <strong ng-hide="organization.PlanName === 'free'"  translate-comment="dashboard page. how many addresses exist for an organization as well as the total number allowed." translate>{{ organization.UsedAddresses }} of {{ organization.MaxAddresses }}</strong>
-                                            <strong ng-show="organization.PlanName === 'free'">1</strong>
-                                        </td>
-                                        <td class="text-right actions">
-                                            <a ui-sref="secured.identities" class="pm_button link" ng-hide="subscription.Name === 'free'" translate-context="Action" translate>Manage</a>
-                                            <a href="#" class="pm_button link" ng-show="subscription.Name === 'free'" ng-click="scrollToPlans()" translate-context="Action" translate>Upgrade</a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th translate-context="Title" translate>Storage</th>
-                                        <td colspan="2">
-                                            <strong ng-hide="organization.PlanName === 'free'"  translate-comment="show used storage for an account" translate>{{ organization.UsedSpace | humanSize }} of {{ organization.MaxSpace | humanSize }}</strong>
-                                            <strong ng-show="organization.PlanName === 'free'"  translate-comment="show used storage for an account" translate>{{ user.UsedSpace | humanSize }} of {{ user.MaxSpace | humanSize }}</strong>
-                                            <br>
-                                            <div class="storageBar">
-                                                <div class="storageBar-progress" ng-hide="organization.PlanName === 'free'" style="width: {{ organization.UsedSpace / organization.MaxSpace * 100 }}%"></div>
-                                                <div class="storageBar-progress" ng-show="organization.PlanName === 'free'" style="width: {{ user.UsedSpace / user.MaxSpace * 100 }}%"></div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr ng-show="user.Credit">
-                                        <th translate-context="Title" translate>Credit</th>
-                                        <td>
-                                            <strong>{{ user.Credit / 100 | currency: user.Currency }}</strong>
-                                        </td>
-                                        <td>&nbsp;</td>
-                                    </tr>
-                                    <tr ng-show="subscription.CouponCode">
-                                        <th translate-context="Title" translate>Coupon</th>
-                                        <td>
-                                            <strong>{{ subscription.CouponCode }}</strong>
-                                        </td>
-                                        <td>&nbsp;</td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
+                        <section class="settingsDashboard-overview-section-table-container">
+                            <overview-section></overview-section>
+                        </section>
                     </div>
-                    <div class="col-1-2 pm-flex-content" ng-hide="subscription.Name === 'free'">
-
-
+                    <div class="settingsDashboard-subscription-section col-1-2" ng-if="isPaidUser">
                         <header-block class="settingsDashboard-header-subscription">
                             <h2
                                 class="settingsDashboard-title-subscription"
                                 translate
                                 translate-context="Title">My subscription</h2>
                         </header-block>
-
-                        <div class="well pm-flex-content-fillHeight">
-                            <div class="pm_table">
-                                <table class="plain">
-                                    <tr ng-repeat="plan in subscription.Plans | filter: {Type: 1}">
-                                        <th style="width: 10rem" translate-context="Title" translate>Plan</th>
-                                        <td><strong>{{ plan.Title }}</strong></td>
-                                        <td style="width: 12rem" class="text-right actions">
-                                            <span ng-show="subscription.Cycle === 1">{{ subscription.Amount / 100 | currency: subscription.Currency }}</span>
-                                            <span ng-show="subscription.Cycle === 12">{{ subscription.Amount / 100 / 12 | fixed: 2 | currency: subscription.Currency }}/mo</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th></th>
-                                        <td colspan="2"><strong>{{ count('MaxSpace') | humanSize }} <span translate-context="Title" translate>Storage</span></strong></td>
-                                    </tr>
-                                    <!-- <tr ng-show="keyPhase > 3">
-                                        <th></th>
-                                        <td colspan="2"><strong>{{ count('MaxMembers') }} <span translate-context="Title" translate>Members</span></strong></td>
-                                    </tr> -->
-                                    <tr>
-                                        <th></th>
-                                        <td colspan="2"><strong>{{ count('MaxDomains') }} <span translate-context="Title" translate>Domains</span></strong></td>
-                                    </tr>
-                                    <tr>
-                                        <th></th>
-                                        <td colspan="2"><strong> {{ count('MaxAddresses') }} <span translate-context="Title" translate>Addresses</span></strong></td>
-                                    </tr>
-                                    <tr ng-hide="subscription.CouponCode === 'LIFETIME'">
-                                        <th translate-context="Title" translate>Period End</th>
-                                        <td colspan="2"><strong>{{ subscription.PeriodEnd | readableTime }}</strong></td>
-                                    </tr>
-                                    <tr>
-                                        <th translate-context="Title" translate>Total price</th>
-                                        <td>
-                                            <strong ng-show="subscription.Cycle === 1" translate-context="Title" translate>Monthly</strong>
-                                            <strong ng-show="subscription.Cycle === 12" translate-context="Title" translate>Annually</strong>
-                                        </td>
-                                        <td class="text-right actions">{{ subscription.Amount / 100 | currency: subscription.Currency }}</td>
-                                    </tr>
-                                    <tr>
-                                        <th translate-context="Title" translate>Payment</th>
-                                        <td>
-                                            <strong ng-show="methods.length === 0" translate-context="Title" translate>None</strong>
-                                            <strong ng-show="methods.length > 0" translate-context="Title" translate>Credit card</strong>
-                                        </td>
-                                        <td class="text-right actions">
-                                            <a class="pm_button link" ui-sref="secured.payments" translate-context="Action" translate>Manage</a>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
+                        <section class="settingsDashboard-subscription-section-table-container">
+                            <subscription-section methods="methods"></subscription-section>
+                        </section>
                     </div>
-                    <div class="col-1-2 donate pm-flex-content" ng-show="subscription.Name === 'free'">
+                    <div class="col-1-2 donate pm-flex-content" ng-if="!isPaidUser">
                         <header-block class="settingsDashboard-header-donate">
                             <h2
                                 class="settingsDashboard-title-donate"
@@ -157,7 +36,7 @@
                             <p  translate>Upgrading to a paid account is the best way to support ProtonMail, but you can also donate any amount.</p>
                             <p><strong  translate>Your donation helps us support more users and continue to develop ProtonMail as free and open source software.</strong></p>
                             <p>
-                                <button class="pm_button primary" type="button" ng-click="donate()" translate translate-context="Action">Donate</button>
+                                <donate-btn class="pm_button primary settingsDashboard-btn-donation"></donate-btn>
                             </p>
                         </div>
                     </div>
@@ -172,140 +51,27 @@
                         translate
                         translate-context="Title">Plans and prices</h2>
                 </header-block>
-                <div class="settingsDashboard-plans-devise">
-                    <a href="https://protonmail.com/support/knowledge-base/paid-plans/" target="_blank" class="pm_button link pull-right" translate-context="Action" translate>Learn more</a>
-                    <div class="group">
-                        <label class="pull-left"  translate>Currency</label>
-                        <div class="pm_buttons pull-left">
-                            <a href="#" ng-click="changeCurrency('EUR')" ng-class="{'active': configuration.currency === 'EUR'}">EUR</a>
-                            <a href="#" ng-click="changeCurrency('USD')" ng-class="{'active': configuration.currency === 'USD'}">USD</a>
-                            <a href="#" ng-click="changeCurrency('CHF')" ng-class="{'active': configuration.currency === 'CHF'}">CHF</a>
+                <section class="settingsDashboard-plans-subheader">
+                    <vpn-discount-panel></vpn-discount-panel>
+                    <div class="settingsDashboard-plans-devise-discount">
+                        <div class="settingsDashboard-plans-devise">
+                            <div class="settingsDashboard-plans-devise-label">
+                                <label translate>Currency</label>
+                                <a class="settingsDashboard-plans-devise-label-link text-purple" href="https://protonmail.com/support/knowledge-base/changing-the-currency/" target="_blank">
+                                    <i class="fa fa-info-circle"></i>
+                                </a>
+                            </div>
+                            <currency-selector></currency-selector>
                         </div>
                     </div>
-                </div>
-                <div class="pm_grid no-padding plans">
-                    <div ng-repeat="plan in plans | filter: {Type: 1, Cycle: configuration.cycle}: true | orderBy: 'Amount'" class="col-1-3 plan {{plan.Name + '-plan'}}">
-                        <section>
-                            <h3>
-                                <img src="assets/img/logo.png" alt="ProtonMail" />
-                                <span>{{ plan.Title }}</span>
-                            </h3>
-                            <ul class="features">
-                                <!-- <li class="tall" ng-show="keyPhase > 3">
-                                    <i class="fa fa-times" ng-show="plan.MaxMembers === 0"></i>
-                                    <i class="fa fa-check" ng-show="plan.MaxMembers > 0"></i>
-                                    <span class="pm_select inline" ng-show="plan.Name === 'business'">
-                                        <select ng-model="selects.business.member" ng-options="option.label for option in memberOptions"></select>
-                                        <i class="fa fa-angle-down"></i>
-                                    </span>
-                                    <span ng-show="plan.Name !== 'business'">{{ plan.MaxMembers }}</span>
-                                    <span translate>User</span>
-                                    <strong class="cost pull-right" ng-show="selects.business.member.index * addons[plan.Cycle].member.Amount && (plan.Name === 'plus' || plan.Name === 'business')">+{{ selects.business.member.index * addons[plan.Cycle].member.Amount / 100 / plan.Cycle | fixed: 2 | currency: plan.Currency }}</strong>
-                                    <span class="clear"></span>
-                                </li> -->
-                                <li class="tall">
-                                    <i class="fa fa-check"></i>
-                                    <span class="pm_select inline" ng-show="plan.Name === 'plus' || plan.Name === 'business'">
-                                        <select ng-if="plan.Name === 'plus'" ng-model="selects[plan.Name].space" ng-options="option.label for option in plusSpaceOptions"></select>
-                                        <select ng-if="plan.Name === 'business'" ng-model="selects[plan.Name].space" ng-options="option.label for option in businessSpaceOptions"></select>
-                                        <i class="fa fa-angle-down"></i>
-                                    </span>
-                                    <span ng-hide="plan.Name === 'plus' || plan.Name === 'business'">{{ plan.MaxSpace | humanSize }}</span>
-                                    <span translate>Storage</span>
-                                    <strong class="cost pull-right" ng-show="selects[plan.Name].space.index * addons[plan.Cycle].space.Amount && (plan.Name === 'plus' || plan.Name === 'business')">+{{ selects[plan.Name].space.index * addons[plan.Cycle].space.Amount / 100 / plan.Cycle | fixed: 2 | currency: plan.Currency }}</strong>
-                                    <span class="clear"></span>
-                                </li>
-                                <li ng-class="{disabled: plan.MaxDomains === 0}" class="tall">
-                                    <i class="fa fa-times" ng-show="plan.MaxDomains === 0"></i>
-                                    <i class="fa fa-check" ng-show="plan.MaxDomains > 0"></i>
-                                    <span class="pm_select inline" ng-show="plan.Name === 'plus' || plan.Name === 'business'">
-                                        <select ng-model="selects[plan.Name].domain" ng-options="option.label for option in domainOptions"></select>
-                                        <i class="fa fa-angle-down"></i>
-                                    </span>
-                                    <span ng-hide="plan.Name === 'plus' || plan.Name === 'business'">{{ plan.MaxDomains }}</span>
-                                    <span translate translate-n="plan.MaxDomains" translate-plural="Custom domains">Custom domain</span>
-                                    <i class="fa fa-info-circle" pt-tooltip-translate="Allows you to host emails for your own domain(s) at ProtonMail, e.g. <u>john@smith.com</u>" pt-tooltip-translate-context="Info" pt-html="true"></i>
-                                    <strong class="cost pull-right" ng-show="selects[plan.Name].domain.index * addons[plan.Cycle].domain.Amount && (plan.Name === 'plus' || plan.Name === 'business')">+{{ selects[plan.Name].domain.index * addons[plan.Cycle].domain.Amount / 100 / plan.Cycle | fixed: 2 | currency: plan.Currency }}</strong>
-                                    <span class="clear"></span>
-                                </li>
-                                <li class="tall">
-                                    <i class="fa fa-check"></i>
-                                    <span class="pm_select inline" ng-show="plan.Name === 'plus' || plan.Name === 'business'">
-                                        <select ng-model="selects[plan.Name].address" ng-options="option.label for option in addressOptions"></select>
-                                        <i class="fa fa-angle-down"></i>
-                                    </span>
-                                    <span ng-hide="plan.Name === 'plus' || plan.Name === 'business'">{{ plan.MaxAddresses }}</span>
-                                    <span translate translate-n="plan.MaxAddresses" translate-plural="Addresses">Address</span>
-                                    <i class="fa fa-info-circle" pt-tooltip-translate="Add additional addresses to your account like <u>username2@protonmail.com</u>" pt-tooltip-translate-context="Info" pt-html="true"></i>
-                                    <strong class="cost pull-right" ng-show="selects[plan.Name].address.index * addons[plan.Cycle].address.Amount && (plan.Name === 'plus' || plan.Name === 'business')">+{{ selects[plan.Name].address.index * addons[plan.Cycle].address.Amount / 100 / plan.Cycle | fixed: 2 | currency: plan.Currency }}</strong>
-                                    <span class="clear"></span>
-                                </li>
-                                <li>
-                                    <i class="fa fa-check"></i>
-                                    <span ng-bind="plan.sending"></span>
-                                </li>
-                                <li>
-                                    <i class="fa fa-check"></i>
-                                    <span ng-bind="plan.labels"></span>
-                                </li>
-                                <li ng-class="{disabled: plan.Name === 'free'}">
-                                    <i class="fa fa-times" ng-show="plan.MaxDomains === 0"></i>
-                                    <i class="fa fa-check" ng-show="plan.MaxDomains > 0"></i>
-                                    <span>Custom Email Filters</span>
-                                </li>
-                                <li>
-                                    <i class="fa fa-check"></i>
-                                    <span ng-bind="plan.support"></span>
-                                </li>
-                            </ul>
-                        </section>
-                        <footer>
-                            <div class="cycle text-center" ng-show="plan.Name === 'free'">
-                                <strong  translate>Free</strong>
-                            </div>
-                            <div class="cycle pm_grid monthly" ng-hide="plan.Name === 'free'">
-                                <div class="col-1-2">
-                                    <label>
-                                        <custom-radio data-custom-ng-model="configuration.cycle" data-custom-ng-value="1"></custom-radio>
-                                        <span translate translate-comment="form option">Pay monthly</span>
-                                    </label>
-                                </div>
-                                <div class="col-1-2 text-right">
-                                    <div>
-                                        <strong>{{ total(plan, 1) / 100 | fixed: 2 | currency: plan.Currency }}</strong>
-                                        <span  translate-comment="price per month for a plan" translate>/Month</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="cycle pm_grid" ng-hide="plan.Name === 'free'">
-                                <span class="discount">
-                                    <span>-20%</span>
-                                </span>
-                                <div class="col-1-2">
-                                    <label>
-                                        <custom-radio data-custom-ng-model="configuration.cycle" data-custom-ng-value="12"></custom-radio>
-                                        <span translate translate-comment="form option">Pay annually</span>
-                                    </label>
-                                </div>
-                                <div class="col-1-2 text-right">
-                                    <div>
-                                        <strong>{{ total(plan, 12) / 100 / 12 | fixed: 2 | currency: plan.Currency }}</strong>
-                                        <span  translate-comment="price per month for a plan" translate>/Month</span>
-                                    </div>
-                                    <div>
-                                        <small>Billed as {{ total(plan, 12) / 100 | fixed: 2 | currency: plan.Currency }} per year</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="action">
-                                <button type="button" ng-click="choose(plan)" class="pm_button" ng-class="{
-                                    primary: plan.Name !== subscription.Name,
-                                    dead: plan.Name === subscription.Name && subscription.Name === 'free'
-                                }" ng-bind="text(plan)"></button>
-                            </div>
-                        </footer>
+                </section>
+                <div class="settingsDashboard-arrowToScroll" arrows-to-scroll>
+                    <div class="settingsDashboard-plans" show-vpn active-plan>
+                        <free-column></free-column>
+                        <plus-column></plus-column>
+                        <professional-column></professional-column>
+                        <visionary-column><visionary-column>
                     </div>
-                    <div class="clear"></div>
                 </div>
             </section>
         </div>

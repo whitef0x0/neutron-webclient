@@ -1,11 +1,16 @@
 angular.module('proton.message')
-    .directive('actionMessage', ($rootScope, openStatePostMessage) => {
+    .directive('actionMessage', ($rootScope, CONSTANTS, openStatePostMessage) => {
 
         const dispatcher = (message = {}) => (action = '', mailbox = '') => {
             $rootScope.$emit('messageActions', {
                 action,
-                data: { ids: [message.ID], mailbox }
+                data: { ids: [message.ID], labelID: CONSTANTS.MAILBOX_IDENTIFIERS[mailbox] }
             });
+        };
+
+        const toggleImages = ({ message }) => {
+            (message.showEmbedded === true) && (message.showEmbedded = false);
+            (message.showImages === true) && (message.showImages = false);
         };
 
         return {
@@ -24,6 +29,7 @@ angular.module('proton.message')
 
                         case 'togglePlainHtml':
                             scope.$applyAsync(() => {
+                                toggleImages(scope);
                                 scope.message.viewMode = (scope.message.viewMode === 'plain') ? 'html' : 'plain';
                             });
                             dispatch(actionMessage, actionMessageType);
@@ -40,7 +46,7 @@ angular.module('proton.message')
                             message.content = el
                                 .parents('.message')
                                 .get(0)
-                                .querySelector('.bodyDecrypted')
+                                .querySelector('.message-body-container')
                                 .innerHTML;
 
                             openStatePostMessage.open('printer', { messageID: message.ID }, {

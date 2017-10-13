@@ -1,4 +1,4 @@
-message-view {
+.messageView-contaniner {
     @include flexColumn();
 }
 
@@ -165,7 +165,7 @@ message-view {
                 }
             }
         }
-        &.unread .summary {
+        &.unread:not(.open) .summary {
             background: $white;
             .meta .contact strong {
                 font-weight: 700;
@@ -176,7 +176,7 @@ message-view {
                 background: $white !important;
             }
             .time::after {
-                background: $white !important;
+                background: linear-gradient(to right,  rgba($white,0) 0%, $white 100%);
             }
         }
         & .summary {
@@ -218,15 +218,16 @@ message-view {
             .time {
                 position: relative;
                 padding-left: 1rem;
+                z-index: 1;
                 &::after {
                     content: "";
                     display: block;
                     position: absolute;
                     left: -1rem;
                     width: 1rem;
-                    height: 25px;
+                    height: 34px;
                     top: 0;
-                    background: linear-gradient(to right,  rgba($white,0) 0%, $tertiary 100%);
+                    background: linear-gradient(to right,  rgba($tertiary,0) 0%, $tertiary 100%);
                 }
                 .fa-paperclip {
                     display: inline-block;
@@ -356,10 +357,6 @@ message-view {
                     position: relative;
                     overflow: auto;
                 }
-                .proton-embedded{
-                    max-width: 100%;
-                    height: auto;
-                }
             }
 
             .plain {
@@ -377,6 +374,7 @@ message-view {
 
 #conversation-view:empty { display: none }
 
+.message.message-mode-plain .displayContentBtn-container { display: none }
 
 .protonmail_signature_block-empty { /* https://github.com/ProtonMail/Angular/issues/4813 */
     opacity: 0;
@@ -392,12 +390,9 @@ body.appConfigBody-is-mobile {
                 height: 60px;
                 line-height: 25px;
                 position: relative;
-                .pull-left {
-                    position: static;
-                }
                 .meta {
                     position: absolute;
-                    left: 10px;
+                    left: 0px;
                     top: 5px;
                     max-width: initial;
                     white-space: nowrap;
@@ -519,9 +514,9 @@ body.appConfigBody-is-mobile {
             }
         }
     }
+    .message .details .action-row .pm_buttons a  { padding: 0 8px }
 }
 
-.message-summary-labels { padding-left: .2em; }
 .message-summary-labels-list {
     max-width: 100%;
     height: 20px;
@@ -549,7 +544,7 @@ body.appConfigBody-is-mobile {
     }
 }
 
-.proton-message-blockquote-toggle ~ * {display: none}
+.proton-message-blockquote-toggle ~ * {display: none !important}
 .print .proton-message-blockquote-toggle {
     display: none;
     ~ * {

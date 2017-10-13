@@ -1,13 +1,17 @@
 angular.module('proton.ui')
-    .factory('pageTitlesModel', (CONSTANTS, cacheCounters, gettextCatalog, authentication, $state, tools, labelsModel) => {
+    .factory('pageTitlesModel', (CONSTANTS, $rootScope, cacheCounters, gettextCatalog, authentication, $state, tools, labelsModel) => {
 
         const { MAILBOX_IDENTIFIERS } = CONSTANTS;
-        const DISPLAY_NUMBER = ['inbox', 'drafts', 'sent', 'starred', 'archive', 'spam', 'trash'];
-        const MAP = {
+        const DISPLAY_NUMBER = ['inbox', 'drafts', 'sent', 'starred', 'archive', 'spam', 'trash', 'allmail', 'allDrafts', 'allSent'];
+
+        const loadI18N = () => ({
+            allmail: gettextCatalog.getString('All Mail', null, 'Title'),
             inbox: gettextCatalog.getString('Inbox', null, 'Title'),
             search: gettextCatalog.getString('Search', null, 'Title'),
+            allDrafts: gettextCatalog.getString('Drafts', null, 'Title'),
             drafts: gettextCatalog.getString('Drafts', null, 'Title'),
             sent: gettextCatalog.getString('Sent', null, 'Title'),
+            allSent: gettextCatalog.getString('Sent', null, 'Title'),
             starred: gettextCatalog.getString('Starred', null, 'Title'),
             archive: gettextCatalog.getString('Archive', null, 'Title'),
             spam: gettextCatalog.getString('Spam', null, 'Title'),
@@ -23,18 +27,23 @@ angular.module('proton.ui')
             users: gettextCatalog.getString('Users', null, 'Title'),
             invoices: gettextCatalog.getString('Invoices', null, 'Title'),
             filters: gettextCatalog.getString('Filters', null, 'Title'),
+            autoresponder: gettextCatalog.getString('Automatic Replies', null, 'Title'),
             keys: gettextCatalog.getString('Keys', null, 'Title'),
             payments: gettextCatalog.getString('Payment methods', null, 'Title'),
-            identities: gettextCatalog.getString('Identities', null, 'Title'),
+            signatures: gettextCatalog.getString('Name / Signature', null, 'Title'),
             login: gettextCatalog.getString('Login', null, 'Title'),
             signup: gettextCatalog.getString('Signup', null, 'Title'),
-            vpn: gettextCatalog.getString('VPN', null, 'Title')
-        };
+            vpn: gettextCatalog.getString('VPN', null, 'Title'),
+            'eo.message': gettextCatalog.getString('Encrypted Message', null, 'Title'),
+            'eo.reply': gettextCatalog.getString('Encrypted Reply', null, 'Title')
+        });
+
+        let MAP = loadI18N();
 
         function getFirstSortedAddresses() {
             return _.chain(authentication.user.Addresses)
                 .where({ Status: 1, Receive: 1 })
-                .sortBy('Send')
+                .sortBy('Order')
                 .first()
                 .value() || {};
         }
@@ -53,7 +62,7 @@ angular.module('proton.ui')
          * @return {String}
          */
         const getCounterKey = () => {
-            if (tools.typeList() === 'message') {
+            if (tools.getTypeList() === 'message') {
                 return 'unreadMessage';
             }
             return 'unreadConversation';
@@ -100,12 +109,18 @@ angular.module('proton.ui')
                 .join(' | ');
         };
 
+        $rootScope.$on('i18n', (event, { type }) => {
+            if (type === 'load') {
+                MAP = loadI18N();
+            }
+        });
+
         /**
          * Find the current page title
          * @param  {String} options.name
          * @return {String}
          */
-        const find = ({ name } = {}) => {
+        const find = ({ name } = {}, withEmail = true) => {
             const mailbox = tools.currentMailbox() || tools.filteredState();
 
             if (/login|reset-password/.test(mailbox || name)) {
@@ -114,7 +129,7 @@ angular.module('proton.ui')
 
             const isLabelState = mailbox === 'label';
             const number = formatNumber(getNumberMessage(), mailbox);
-            const { Email = '' } = getFirstSortedAddresses();
+            const { Email = '' } = withEmail ? getFirstSortedAddresses() : {};
 
             if (MAP[mailbox] || isLabelState) {
                 const value = !isLabelState ? MAP[mailbox] : getLabelState();

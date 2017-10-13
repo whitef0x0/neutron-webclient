@@ -1,7 +1,6 @@
 html.protonmail {
 	height: 100%;
 	body {
-		background: $secondary;
 		height: 100%;
 		.blank { background: $white }
 		.mobileOnly { 	display: none }
@@ -45,6 +44,12 @@ html.protonmail {
 	}
 	.plus {
 		color: $light-green;
+	}
+	.lifetime {
+		color: #5FDEFB;
+	}
+	.professional {
+		color: #D4B46E
 	}
 	.background-primary {
 		background: $primary;
@@ -143,6 +148,17 @@ html.protonmail {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.help-dnd {
+		font-style: italic;
+		opacity: .8
+	}
+	.help-dnd:before {
+		margin-right: .5em;
+	    font-family: FontAwesome;
+		font-style: normal;
+		content: "\F047";
 	}
 
 	::-webkit-input-placeholder { color: #aaaabf }

@@ -1,7 +1,7 @@
 angular.module('proton.sidebar')
     .factory('sidebarSettingsModel', (gettextCatalog) => {
 
-        const CONFIG = {
+        const getStateConfig = () => ({
             dashboard: {
                 state: 'secured.dashboard',
                 label: gettextCatalog.getString('Dashboard', null, 'Title'),
@@ -22,6 +22,11 @@ angular.module('proton.sidebar')
                 label: gettextCatalog.getString('Filters', null, 'Title'),
                 icon: 'fa-filter'
             },
+            autoresponder: {
+                state: 'secured.autoresponder',
+                label: gettextCatalog.getString('Auto-Reply', null, 'Title'),
+                icon: 'fa-envelope-open'
+            },
             security: {
                 state: 'secured.security',
                 label: gettextCatalog.getString('Security', null, 'Title'),
@@ -32,9 +37,9 @@ angular.module('proton.sidebar')
                 label: gettextCatalog.getString('Appearance', null, 'Title'),
                 icon: 'fa-paint-brush'
             },
-            identities: {
-                state: 'secured.identities',
-                label: gettextCatalog.getString('Identities', null, 'Title'),
+            signatures: {
+                state: 'secured.signatures',
+                label: gettextCatalog.getString('Name / Signature', null, 'Title'),
                 icon: 'fa-at'
             },
             members: {
@@ -62,9 +67,7 @@ angular.module('proton.sidebar')
                 label: gettextCatalog.getString('VPN', null, 'Title'),
                 icon: 'fa-shield'
             }
-        };
-
-        const getStateConfig = () => CONFIG;
+        });
 
         return { getStateConfig };
     });

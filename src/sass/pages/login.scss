@@ -1,8 +1,13 @@
 body#reset {
 	background: $dark;
-	.alert {
+	.alert:not(.alert-danger) {
 		color: $black;
 	}
+	.pm_panel {
+		display: flex;
+		align-items: center;
+	}
+
 }
 body#login-unlock,
 body#login-sub {
@@ -51,7 +56,8 @@ body#reset {
 		text-align: left;
 	}
 	h4 {
-		line-height: 3em;
+		padding: .9em 0;
+		line-height: 1.2em;
 		font-weight: 600;
 	}
 	a.pm_button.link {
@@ -62,9 +68,6 @@ body#reset {
 		height: 20px;
 		width: auto;
 		margin: 0 auto;
-	}
-	.pm_button.primary {
-		padding: 0 25px;
 	}
 	input[type="text"],
 	input[type="number"],
@@ -80,6 +83,19 @@ body#reset {
 			color: $white;
 		}
 	}
+
+	.password-container { line-height: 38px }
+
+	.loginForm-input-password .password-messages,
+	.unlock-input-password .password-messages { display: none }
+
+	.customPasswordToggler {
+		&.loginForm-input-password .password-input[type="password"],
+		&.unlock-input-password .password-input[type="password"] {
+			padding: 10px 30px 10px 0px;
+		}
+	}
+
 	p {
 		text-transform: initial;
 	}
@@ -106,15 +122,21 @@ body#reset {
     }
 
 	&.loadingUnlock {
-		padding:0;
+		position: relative;
+		padding: 0;
+        .loadingUnlock-loader-container {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+        }
+        .unlock-panel { display: none }
 	}
-	.loadingUnlock-loader-container {
-		display: flex;
-		height: 100%;
-		width: 100%;
-		justify-content: center;
-		align-items: center;
-	}
+    .loadingUnlock-loader-container { display: none }
 }
 
 #pm_footer {
@@ -151,6 +173,26 @@ body#reset {
 	}
 }
 
+#pm_login,
+#pm_loginTwoFactor,
+body#reset,
+body#support-reset-password {
+	.alert-danger {
+		font-weight: bold;
+		color: #FFF;
+	}
+
+	.alert ul {
+		padding: 0;
+		font-size: .9em;
+	}
+
+	.alert ul li {
+		margin-bottom: .5em;
+	}
+}
+
+
 body.appConfigBody-is-mobile {
 	#pm_login {
 		input[type="text"],
@@ -162,9 +204,6 @@ body.appConfigBody-is-mobile {
 		margin: 0;
 		border: none;
 		background: transparent;
-	}
-	body#login #pm_header {
-		overflow: visible !important;
 	}
 	#pm_footer {
 		display: none;

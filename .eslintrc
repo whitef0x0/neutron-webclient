@@ -13,6 +13,7 @@
     "pmcrypto": true,
     "noUiSlider": true,
     "Awesomplete": true,
+    "Brick": true,
     "QRCode": true,
     "DOMPurify": true,
     "MailParser": true,
@@ -34,6 +35,7 @@
     "_": true
   },
   "rules": {
+    "object-shorthand": "off",
     "indent": ["error", 4, {"SwitchCase": 1}],
     "arrow-parens": ["error", "always"],
     "comma-dangle": ["error", "never"],

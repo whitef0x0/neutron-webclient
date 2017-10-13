@@ -10,8 +10,7 @@ body {
         width: 40%;
         float: left;
         height: 100%;
-        overflow-y: scroll;
-        overflow-x: hidden;
+        overflow: auto;
         position: relative;
         border-right:1px solid $border;
     }
@@ -38,10 +37,10 @@ body {
         }
     }
     #pm_thread {
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-flex:1;
         flex:1;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        -webkit-transform: translate3d(0, 0, 0);
 
         &:focus {
             /* hotkey remove browser focus styling */
@@ -49,19 +48,20 @@ body {
         }
     }
     #conversation-list-rows {
-        overflow-y: scroll;
-        overflow-x: hidden;
         height: 100%;
         position: relative;
+        overflow: auto;
     }
     #pm_main {
         height: calc(100% - 61px); /* #pm_header-desktop height */
         float: left;
-        width: calc(100% - 190px);
+        width: calc(100% - #{$sidebarWidth});
     }
     #wrapper {
+        position: relative; /* conversation-wrapper is absolute for sticky things*/
         height: calc(100% - 56px); /* #pm_toolbar-desktop height */
         overflow: auto;
+        -webkit-overflow-scrolling: touch;
         clear: both;
     }
     &, #body {
@@ -95,7 +95,7 @@ body.appConfigBody-is-mobile {
         width: 100%;
     }
     #wrapper {
-        height: calc(100% - 75px);
+        height: calc(100% - 70px);
     }
     #pm_view {
         width: 60%;

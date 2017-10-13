@@ -1,5 +1,5 @@
 angular.module('proton.composer')
-    .directive('composer', ($rootScope, embedded, attachmentFileFormat) => {
+    .directive('composer', (AppModel, $rootScope, embedded, attachmentFileFormat, authentication) => {
 
         const CLASS_DRAGGABLE = 'composer-draggable';
         const CLASS_DRAGGABLE_EDITOR = 'composer-draggable-editor';
@@ -67,34 +67,65 @@ angular.module('proton.composer')
                         });
                     }
 
+                    if (/squireToolbar/.test(target.classList.toString())) {
+                        scope.$applyAsync(() => {
+                            scope.message.ccbcc = false;
+                        });
+                    }
+
                 };
+
+                const onDragLeave = _.debounce((e) => {
+                    const { target } = e;
+                    if (target.classList.contains('composer-dropzone') || target.classList.contains('composer-dropzone-wrapper')) {
+                        addDragleaveClassName(el[0]);
+                    }
+                }, 500);
 
                 const onDragEnter = ({ originalEvent }) => {
                     if (attachmentFileFormat.isUploadAbleType(originalEvent)) {
                         addDragenterClassName(el[0]);
                     }
                 };
-                const onDragLeave = _.debounce(({ target }) => {
-                    target.classList.contains('composer-dropzone') && addDragleaveClassName(el[0]);
-                }, 16);
+
+                const onKeydown = ({ keyCode }) => {
+                    // ESC
+                    if (keyCode === 27) {
+
+                        // Autocomplete input
+                        if (document.activeElement && document.activeElement.classList.contains('autocompleteEmails-input')) {
+                            return;
+                        }
+                        if (authentication.user.Hotkeys === 1) {
+                            $rootScope.$emit('composer.update', {
+                                type: 'close.message',
+                                data: { message: scope.message }
+                            });
+                        }
+                    }
+                };
 
                 el.on('dragenter', onDragEnter);
                 el.on('dragleave', onDragLeave);
                 el.on('click', onClick);
+                el.on('keydown', onKeydown);
 
                 const unsubscribeEditor = $rootScope.$on('editor.draggable', onAction(scope, el[0]));
                 const unsubscribeAtt = $rootScope.$on('attachment.upload', onAction(scope, el[0]));
 
-                scope
-                    .$on('$destroy', () => {
-                        el.off('dragenter', onDragEnter);
-                        el.off('dragleave', onDragLeave);
-                        el.off('click', onClick);
+                scope.$on('$destroy', () => {
+                    el.off('dragenter', onDragEnter);
+                    el.off('dragleave', onDragLeave);
+                    el.off('click', onClick);
+                    el.off('keydown', onKeydown);
 
-                        unsubscribeEditor();
-                        unsubscribeAtt();
-                        scope.selected = undefined;
-                    });
+                    unsubscribeEditor();
+                    unsubscribeAtt();
+
+                    AppModel.set('activeComposer', false);
+                    AppModel.set('maximizedComposer', false);
+                    scope.selected = undefined;
+                });
             }
         };
     });

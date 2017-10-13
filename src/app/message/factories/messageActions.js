@@ -1,22 +1,38 @@
 angular.module('proton.message')
-    .factory('messageActions', ($q, $rootScope, tools, cache, eventManager, messageApi, networkActivityTracker, CONSTANTS, notify, gettextCatalog, labelsModel) => {
+    .factory('messageActions', ($q, $rootScope, tools, cache, eventManager, messageApi, networkActivityTracker, CONSTANTS, notification, gettextCatalog, labelsModel, $filter) => {
 
         const REMOVE_ID = 0;
         const ADD_ID = 1;
 
-        const notifySuccess = (message) => notify({ message, classes: 'notification-success' });
+        const ACTION_STATUS = CONSTANTS.STATUS;
 
-        function getFolderNameTranslated(mailbox) {
-            const mailboxs = {
-                inbox: gettextCatalog.getString('Inbox', null),
-                spam: gettextCatalog.getString('Spam', null),
-                drafts: gettextCatalog.getString('Drafts', null),
-                sent: gettextCatalog.getString('Sent', null),
-                trash: gettextCatalog.getString('Trash', null),
-                archive: gettextCatalog.getString('Archive', null)
-            };
 
-            return mailboxs[mailbox];
+        const unicodeTagView = $filter('unicodeTagView');
+        const notifySuccess = (message) => notification.success(unicodeTagView(message));
+
+        const mailboxes = {
+            [CONSTANTS.MAILBOX_IDENTIFIERS.inbox]: gettextCatalog.getString('Inbox', null),
+            [CONSTANTS.MAILBOX_IDENTIFIERS.spam]: gettextCatalog.getString('Spam', null),
+            [CONSTANTS.MAILBOX_IDENTIFIERS.drafts]: gettextCatalog.getString('Drafts', null),
+            [CONSTANTS.MAILBOX_IDENTIFIERS.allDrafts]: gettextCatalog.getString('Drafts', null),
+            [CONSTANTS.MAILBOX_IDENTIFIERS.sent]: gettextCatalog.getString('Sent', null),
+            [CONSTANTS.MAILBOX_IDENTIFIERS.allSent]: gettextCatalog.getString('Sent', null),
+            [CONSTANTS.MAILBOX_IDENTIFIERS.trash]: gettextCatalog.getString('Trash', null),
+            [CONSTANTS.MAILBOX_IDENTIFIERS.archive]: gettextCatalog.getString('Archive', null)
+        };
+
+        const basicFolders = [
+            CONSTANTS.MAILBOX_IDENTIFIERS.inbox,
+            CONSTANTS.MAILBOX_IDENTIFIERS.trash,
+            CONSTANTS.MAILBOX_IDENTIFIERS.spam,
+            CONSTANTS.MAILBOX_IDENTIFIERS.archive,
+            CONSTANTS.MAILBOX_IDENTIFIERS.sent,
+            CONSTANTS.MAILBOX_IDENTIFIERS.drafts
+        ];
+
+        function getFolderNameTranslated(labelID = '') {
+            const { Name } = labelsModel.read(labelID, 'folders') || {};
+            return mailboxes[labelID] || Name;
         }
 
         $rootScope.$on('messageActions', (event, { action = '', data = {} }) => {
@@ -46,58 +62,46 @@ angular.module('proton.message')
                     addLabel(data.messages, data.labels, data.alsoArchive);
                     break;
                 case 'folder':
-                    folder(data.messageIDs, data.folderID);
+                    move(data);
                     break;
                 default:
                     break;
             }
         });
 
-        function folder(messageIDs = [], folderID = '') {
-            const displaySuccess = () => notifySuccess(gettextCatalog.getPlural(messageIDs.length, 'Message moved', 'Messages moved', null));
-            const promise = messageApi.label(folderID, 1, messageIDs)
-            .then(() => eventManager.call())
-            .then(() => displaySuccess());
-            networkActivityTracker.track(promise);
-        }
+        function updateLabelsAdded(Type, labelID) {
+            const toInbox = labelID === CONSTANTS.MAILBOX_IDENTIFIERS.inbox;
 
-        function updateLabelsAdded(Type, mailbox) {
-            const list = [CONSTANTS.MAILBOX_IDENTIFIERS[mailbox]];
-            switch (Type) {
-                // This message is a draft, if you move it to trash and back to inbox, it will go to draft instead
-                case CONSTANTS.DRAFT: {
-                    list.push(CONSTANTS.MAILBOX_IDENTIFIERS.drafts);
-                    break;
+            if (toInbox) {
+                switch (Type) {
+                    // This message is a draft, if you move it to trash and back to inbox, it will go to draft instead
+                    case CONSTANTS.DRAFT:
+                        return [CONSTANTS.MAILBOX_IDENTIFIERS.allDrafts, CONSTANTS.MAILBOX_IDENTIFIERS.drafts];
+                    // This message is sent, if you move it to trash and back, it will go back to sent
+                    case CONSTANTS.SENT:
+                        return [CONSTANTS.MAILBOX_IDENTIFIERS.allSent, CONSTANTS.MAILBOX_IDENTIFIERS.sent];
+                    // Type 3 is inbox and sent, (a message sent to yourself), if you move it from trash to inbox, it will acquire both the inbox and sent labels ( 0 and 2 ).
+                    case CONSTANTS.INBOX_AND_SENT:
+                        return [CONSTANTS.MAILBOX_IDENTIFIERS.inbox, CONSTANTS.MAILBOX_IDENTIFIERS.allSent, CONSTANTS.MAILBOX_IDENTIFIERS.sent];
                 }
-                // This message is sent, if you move it to trash and back, it will go back to sent
-                case CONSTANTS.SENT: {
-                    list.push(CONSTANTS.MAILBOX_IDENTIFIERS.sent);
-                    break;
-                }
-                // Type 3 is inbox and sent, (a message sent to yourself), if you move it from trash to inbox, it will acquire both the inbox and sent labels ( 0 and 2 ).
-                case CONSTANTS.INBOX_AND_SENT:
-                    list.push(CONSTANTS.MAILBOX_IDENTIFIERS.sent);
-                    break;
             }
-            return list;
+
+            return [labelID];
         }
 
 
         // Message actions
-        function move({ ids, mailbox }) {
-            const exclusiveLabels = labelsModel.ids('folders');
-            const folderIDs = [
-                CONSTANTS.MAILBOX_IDENTIFIERS.inbox,
-                CONSTANTS.MAILBOX_IDENTIFIERS.trash,
-                CONSTANTS.MAILBOX_IDENTIFIERS.spam,
-                CONSTANTS.MAILBOX_IDENTIFIERS.archive
-            ].concat(exclusiveLabels);
-            const toTrash = mailbox === 'trash';
+        function move({ ids, labelID }) {
+            const folders = labelsModel.ids('folders');
+            const labels = labelsModel.ids('labels');
+            const toTrash = labelID === CONSTANTS.MAILBOX_IDENTIFIERS.trash;
+            const toSpam = labelID === CONSTANTS.MAILBOX_IDENTIFIERS.spam;
+            const folderIDs = (toSpam || toTrash) ? basicFolders.concat(folders).concat(labels) : basicFolders.concat(folders);
             const events = _.chain(ids)
                 .map((id) => {
                     const message = cache.getMessageCached(id) || {};
                     let labelIDs = message.LabelIDs || [];
-                    const labelIDsAdded = updateLabelsAdded(message.Type, mailbox);
+                    const labelIDsAdded = updateLabelsAdded(message.Type, labelID);
                     const labelIDsRemoved = labelIDs.filter((labelID) => folderIDs.indexOf(labelID) > -1);
 
                     if (Array.isArray(labelIDsRemoved)) {
@@ -130,12 +134,13 @@ angular.module('proton.message')
                     acc.push(event);
 
                     if (conversation && Array.isArray(messages)) {
-                        const labelIDs = _.chain(messages)
-                            .reduce((acc, { ID, LabelIDs }) => {
+                        const Labels = _.chain(messages)
+                            .reduce((acc, { ID, LabelIDs = [] }) => {
                                 const list = eventList[ID] ? eventList[ID].Message.LabelIDs : LabelIDs;
                                 return acc.concat(list);
                             }, [])
                             .uniq()
+                            .map((ID) => ({ ID }))
                             .value();
 
                         acc.push({
@@ -143,7 +148,7 @@ angular.module('proton.message')
                             ID: conversation.ID,
                             Conversation: {
                                 ID: conversation.ID,
-                                LabelIDs: labelIDs
+                                Labels
                             }
                         });
                     }
@@ -153,12 +158,12 @@ angular.module('proton.message')
                 }, [])
                 .value();
 
-             // Send request
-            const promise = messageApi[mailbox]({ IDs: ids });
+            // Send request
+            const promise = messageApi.label(labelID, 1, ids);
             cache.addToDispatcher(promise);
 
             const message = gettextCatalog.getPlural(ids.length, 'Message moved to', 'Messages moved to', null);
-            const notification = `${message} ${getFolderNameTranslated(mailbox)}`;
+            const notification = `${message} ${getFolderNameTranslated(labelID)}`;
 
             if (tools.cacheContext()) {
                 cache.events(events);
@@ -184,7 +189,7 @@ angular.module('proton.message')
             // Generate event for the message
             events.push({ Action: 3, ID: messageID, Message: { ID: messageID, LabelIDsRemoved: [labelID] } });
 
-            const LabelIDs = _.chain(messages)
+            const Labels = _.chain(messages)
                 .reduce((acc, { ID, LabelIDs = [] }) => {
                     if (ID === messageID) {
                         return acc.concat(LabelIDs.filter((id) => id !== labelID));
@@ -192,6 +197,7 @@ angular.module('proton.message')
                     return acc.concat(LabelIDs);
                 }, [])
                 .uniq()
+                .map((ID) => ({ ID }))
                 .value();
 
             events.push({
@@ -199,7 +205,7 @@ angular.module('proton.message')
                 ID: conversationID,
                 Conversation: {
                     ID: conversationID,
-                    LabelIDs
+                    Labels
                 }
             });
 
@@ -218,41 +224,42 @@ angular.module('proton.message')
          */
         function addLabel(messages, labels, alsoArchive) {
             const context = tools.cacheContext();
-            const current = tools.currentLocation();
-            const currentMailbox = tools.currentMailbox();
-            const ids = _.map(messages, ({ ID }) => ID);
+            const currentLocation = tools.currentLocation();
+            const isStateAllowedRemove = _.contains(basicFolders, currentLocation) || labelsModel.contains(currentLocation, 'folders');
+            const ids = _.pluck(messages, 'ID');
 
             const process = (events) => {
-                cache.events(events).then(() => {
-                    const getLabelsIDS = ({ ConversationID }) => {
-                        return _.chain(cache.queryMessagesCached(ConversationID) || [])
-                            .reduce((acc, { LabelIDs = [] }) => acc.concat(LabelIDs), [])
-                            .uniq()
-                            .value();
-                    };
+                cache.events(events)
+                    .then(() => {
+                        const getLabels = ({ ID }) => {
+                            return _.chain(cache.queryMessagesCached(ID) || [])
+                                .reduce((acc, { LabelIDs = [] }) => acc.concat(LabelIDs), [])
+                                .uniq()
+                                .map((ID) => ({ ID }))
+                                .value();
+                        };
 
-                    const events2 = _.chain((messages))
-                        .map((message) => ({
-                            message,
-                            conversation: cache.getConversationCached(message.ConversationID)
-                        }))
-                        .filter(({ conversation }) => conversation)
-                        .map(({ message, conversation }) => {
-                            conversation.LabelIDs = getLabelsIDS(message);
-                            return {
-                                Action: 3,
-                                ID: conversation.ID,
-                                Conversation: conversation
-                            };
-                        })
-                        .value();
+                        const events2 = _.reduce(messages, (acc, { ConversationID }) => {
+                            const conversation = cache.getConversationCached(ConversationID);
 
-                    cache.events(events2);
+                            if (conversation) {
+                                conversation.Labels = getLabels(conversation);
+                                acc.push({
+                                    Action: 3,
+                                    ID: conversation.ID,
+                                    Conversation: conversation
+                                });
+                            }
 
-                    if (alsoArchive === true) {
-                        messageApi.archive({ IDs: ids }); // Send request to archive conversations
-                    }
-                });
+                            return acc;
+                        }, []);
+
+                        cache.events(events2);
+
+                        if (alsoArchive === true) {
+                            messageApi.archive({ IDs: ids }); // Send request to archive conversations
+                        }
+                    });
             };
 
             const filterLabelsID = (list = [], cb = angular.noop) => {
@@ -267,16 +274,16 @@ angular.module('proton.message')
             };
 
             const { events, promises } = _.reduce(messages, (acc, message) => {
-
                 const msgLabels = (message.LabelIDs || []).filter((v) => isNaN(+v));
-                const toApply = filterLabelsID(labels, ({ ID, Selected }) => Selected && !_.contains(msgLabels, ID));
-                const toRemove = filterLabelsID(labels, ({ ID, Selected }) => !Selected && _.contains(msgLabels, ID));
+                // Selected can equals to true / false / null
+                const toApply = filterLabelsID(labels, ({ ID, Selected }) => Selected === true && !_.contains(msgLabels, ID));
+                const toRemove = filterLabelsID(labels, ({ ID, Selected }) => Selected === false && _.contains(msgLabels, ID));
 
                 if (alsoArchive === true) {
                     toApply.push(CONSTANTS.MAILBOX_IDENTIFIERS.archive);
 
-                    if (currentMailbox !== 'label' && currentMailbox !== 'starred') {
-                        toRemove.push(current);
+                    if (isStateAllowedRemove) {
+                        toRemove.push(currentLocation);
                     }
                 }
 
@@ -327,33 +334,33 @@ angular.module('proton.message')
             }
 
             const events = _.chain(ids)
-            .map((id) => cache.getMessageCached(id))
-            .filter(Boolean)
-            .reduce((acc, { ID, ConversationID, IsRead }) => {
-                const conversation = cache.getConversationCached(ConversationID);
+                .map((id) => cache.getMessageCached(id))
+                .filter(Boolean)
+                .reduce((acc, { ID, ConversationID, IsRead }) => {
+                    const conversation = cache.getConversationCached(ConversationID);
 
-                // Messages
-                acc.push({
-                    Action: 3, ID,
-                    Message: { ID, IsRead, LabelIDsAdded }
-                });
-
-                // Conversation
-                if (conversation) {
+                    // Messages
                     acc.push({
-                        Action: 3,
-                        ID: ConversationID,
-                        Conversation: {
-                            ID: ConversationID,
-                            LabelIDsAdded,
-                            NumUnread: conversation.NumUnread
-                        }
+                        Action: 3, ID,
+                        Message: { ID, IsRead, LabelIDsAdded }
                     });
-                }
 
-                return acc;
-            }, [])
-            .value();
+                    // Conversation
+                    if (conversation) {
+                        acc.push({
+                            Action: 3,
+                            ID: ConversationID,
+                            Conversation: {
+                                ID: ConversationID,
+                                LabelIDsAdded,
+                                ContextNumUnread: conversation.ContextNumUnread
+                            }
+                        });
+                    }
+
+                    return acc;
+                }, [])
+                .value();
 
             cache.events(events);
         }
@@ -374,34 +381,34 @@ angular.module('proton.message')
             }
 
             const events = _.chain(ids)
-            .map((id) => cache.getMessageCached(id))
-            .filter(Boolean)
-            .reduce((acc, { ID, ConversationID, IsRead }) => {
-                const conversation = cache.getConversationCached(ConversationID);
-                const messages = cache.queryMessagesCached(ConversationID);
-                const stars = _.filter(messages, ({ LabelIDs = [] }) => _.contains(LabelIDs, CONSTANTS.MAILBOX_IDENTIFIERS.starred));
+                .map((id) => cache.getMessageCached(id))
+                .filter(Boolean)
+                .reduce((acc, { ID, ConversationID, IsRead }) => {
+                    const conversation = cache.getConversationCached(ConversationID);
+                    const messages = cache.queryMessagesCached(ConversationID);
+                    const stars = _.filter(messages, ({ LabelIDs = [] }) => _.contains(LabelIDs, CONSTANTS.MAILBOX_IDENTIFIERS.starred));
 
-                // Messages
-                acc.push({
-                    Action: 3, ID,
-                    Message: { ID, IsRead, LabelIDsRemoved }
-                });
-
-                // Conversation
-                if (stars.length === 1 && conversation) {
+                    // Messages
                     acc.push({
-                        Action: 3,
-                        ID: ConversationID,
-                        Conversation: {
-                            ID: ConversationID,
-                            LabelIDsRemoved,
-                            NumUnread: conversation.NumUnread
-                        }
+                        Action: 3, ID,
+                        Message: { ID, IsRead, LabelIDsRemoved }
                     });
-                }
-                return acc;
-            }, [])
-            .value();
+
+                    // Conversation
+                    if (stars.length === 1 && conversation) {
+                        acc.push({
+                            Action: 3,
+                            ID: ConversationID,
+                            Conversation: {
+                                ID: ConversationID,
+                                LabelIDsRemoved,
+                                ContextNumUnread: conversation.ContextNumUnread
+                            }
+                        });
+                    }
+                    return acc;
+                }, [])
+                .value();
 
             cache.events(events);
         }
@@ -411,7 +418,7 @@ angular.module('proton.message')
          * @param {Array} ids
          */
         function read(ids = []) {
-
+            const currentLocation = tools.currentLocation();
             // Generate message event
             const { messageIDs, conversationIDs, events } = _
                 .reduce(ids, (acc, ID) => {
@@ -438,16 +445,20 @@ angular.module('proton.message')
                 .uniq()
                 .map((id) => cache.getConversationCached(id))
                 .filter(Boolean)
-                .each((conversation) => {
-                    const messages = cache.queryMessagesCached(conversation.ID);
-                    const filtered = _.filter(messages, ({ ID }) => _.contains(messageIDs, ID));
+                .each(({ ID, Labels = [] }) => {
+                    const messages = _.filter(cache.queryMessagesCached(ID) || [], ({ ID, LabelIDs }) => _.contains(messageIDs, ID) && _.contains(LabelIDs, currentLocation));
 
                     events.push({
                         Action: 3,
-                        ID: conversation.ID,
+                        ID,
                         Conversation: {
-                            ID: conversation.ID,
-                            NumUnread: conversation.NumUnread - filtered.length
+                            ID,
+                            Labels: _.map(Labels, (label) => {
+                                if (label.ID === currentLocation) {
+                                    label.ContextNumUnread -= messages.length;
+                                }
+                                return label;
+                            })
                         }
                     });
                 });
@@ -472,6 +483,7 @@ angular.module('proton.message')
         function unread(ids = []) {
             const context = tools.cacheContext();
             const promise = messageApi.unread({ IDs: ids });
+            const currentLocation = tools.currentLocation();
 
             cache.addToDispatcher(promise);
 
@@ -513,16 +525,20 @@ angular.module('proton.message')
                     .uniq()
                     .map((id) => cache.getConversationCached(id))
                     .filter(Boolean)
-                    .each((conversation) => {
-                        const messages = cache.queryMessagesCached(conversation.ID);
-                        const filtered = _.filter(messages, ({ ID }) => _.contains(messageIDs, ID));
+                    .each(({ ID, Labels = [] }) => {
+                        const messages = _.filter(cache.queryMessagesCached(ID) || [], ({ ID, LabelIDs }) => _.contains(messageIDs, ID) && _.contains(LabelIDs, currentLocation));
 
                         events.push({
                             Action: 3,
-                            ID: conversation.ID,
+                            ID,
                             Conversation: {
-                                ID: conversation.ID,
-                                NumUnread: conversation.NumUnread + filtered.length
+                                ID,
+                                Labels: _.map(Labels, (label) => {
+                                    if (label.ID === currentLocation) {
+                                        label.ContextNumUnread += messages.length;
+                                    }
+                                    return label;
+                                })
                             }
                         });
                     });
@@ -535,42 +551,43 @@ angular.module('proton.message')
          * Delete a list of messages
          * @param {Array} ids
          */
-        function destroy(ids) {
-            const events = [];
+        function destroy(IDs) {
 
-            // Generate cache events
-            _.each(ids, (id) => {
+            const events = _.reduce(IDs, (acc, id) => {
                 const message = cache.getMessageCached(id);
                 const conversation = cache.getConversationCached(message.ConversationID);
 
-                if (angular.isDefined(conversation)) {
+                if (conversation) {
                     if (conversation.NumMessages === 1) {
-                        // Delete conversation
-                        events.push({ Action: 0, ID: conversation.ID });
-                    } else if (conversation.NumMessages > 1) {
+                        acc.push({ Action: ACTION_STATUS.DELETE, ID: conversation.ID });
+                    }
+
+                    if (conversation.NumMessages > 1) {
                         const messages = cache.queryMessagesCached(conversation.ID);
-                        const labelIDs = _.chain(messages)
+                        const Labels = _.chain(messages)
                             .filter(({ ID }) => ID !== id)
                             .reduce((acc, { LabelIDs = [] }) => acc.concat(LabelIDs), [])
                             .uniq()
+                            .map((ID) => ({ ID }))
                             .value();
 
-                        events.push({
-                            Action: 3,
+                        acc.push({
+                            Action: ACTION_STATUS.UPDATE_FLAGS,
                             ID: conversation.ID,
                             Conversation: {
                                 ID: conversation.ID,
-                                LabelIDs: labelIDs, // Forge LabelIDs
+                                Labels,
                                 NumMessages: conversation.NumMessages - 1 // Decrease the number of message
                             }
                         });
                     }
                 }
 
-                events.push({ Action: 0, ID: message.ID });
-            });
+                acc.push({ Action: ACTION_STATUS.DELETE, ID: message.ID });
+                return acc;
+            }, []);
 
-            const promise = messageApi.delete({ IDs: ids });
+            const promise = messageApi.delete({ IDs });
             cache.addToDispatcher(promise);
 
             if (tools.cacheContext() === true) {
@@ -592,7 +609,7 @@ angular.module('proton.message')
 
         return {
             move,
-            detachLabel, addLabel,
+            addLabel,
             star, unstar,
             read, unread,
             destroy, discardMessage

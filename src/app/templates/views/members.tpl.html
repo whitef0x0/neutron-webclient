@@ -5,13 +5,13 @@
 
         <div class="row" ng-show="organization.HasKeys === 0">
             <section class="setting pm_form full">
-                <header-block class="settingsUsers-header-identities">
+                <header-block class="settingsUsers-header-signatures">
                     <h2
-                        class="settingsUsers-title-identities"
+                        class="settingsUsers-title-signatures"
                         translate
                         translate-context="Title">Multi-User Support</h2>
                 </header-block>
-                <p class="alert alert-info" translate-context="Info" translate>Create and administer sub-accounts and assign them email addresses on your custom domain.</p>
+                <p class="alert alert-info" translate-context="Info" translate>Create and manage sub-accounts and assign them email addresses on your custom domain.</p>
                 <p>
                     <button type="button" class="pm_button primary" ng-click="enableMemberSupport()" translate-context="Action" translate>Enable multi-user support</button>
                     <a href="https://protonmail.com/support/knowledge-base/business/" target="_blank" class="pm_button link" translate-context="Link" translate>Learn more</a>
@@ -59,7 +59,7 @@
                                                 <span class="margin-right" translate>Number of users</span>
                                             </td>
                                             <td class="absorbing-column">
-                                                <span class="margin-left" translate-context="Info" translate>{{ organization.UsedMembers }} of {{ organization.MaxMembers }} used</span>
+                                                <span class="margin-left">{{ organization.UsedMembers }} <span translate-context="Info" translate>of</span> {{ organization.MaxMembers }} <span translate-context="Info" translate>used</span></span>
                                             </td>
                                             <td class="text-right">
                                                 <span hide-upgrade="member">
@@ -76,6 +76,19 @@
                                             </td>
                                             <td class="text-right">
                                                 <span hide-upgrade="space">
+                                                    <a ui-sref="secured.dashboard({ scroll: true })" class="pm_button link" translate-context="Action" translate-comment="link to dashboard" translate>Upgrade</a>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td translate-context="Title" translate>
+                                                <span class="margin-right" translate>Available VPN connections</span>
+                                            </td>
+                                            <td class="absorbing-column">
+                                                <span class="margin-left" translate-context="Info" translate>{{ organization.MaxVPN - organization.UsedVPN }} </span>
+                                            </td>
+                                            <td class="text-right">
+                                                <span hide-upgrade="member">
                                                     <a ui-sref="secured.dashboard({ scroll: true })" class="pm_button link" translate-context="Action" translate-comment="link to dashboard" translate>Upgrade</a>
                                                 </span>
                                             </td>
@@ -109,16 +122,16 @@
         <div class="row" id="settingsMembers">
             <section class="setting pm_form full">
 
-                <header-block class="settingsUsers-header-identities">
+                <header-block class="settingsUsers-header-signatures">
                     <h2
-                        class="settingsUsers-title-identities"
+                        class="settingsUsers-title-signatures"
                         translate
-                        translate-context="Title">Identities</h2>
+                        translate-context="Title">Users</h2>
 
-                    <small class="settingsUsers-details-identities" ng-if="isAdmin">
+                    <small class="settingsUsers-details-signatures" ng-if="isAdmin">
                         {{ organization.UsedAddresses }} / {{ organization.MaxAddresses }} <span translate-comment="how many addresses are in use" translate>addresses used.</span>
                         <a
-                            class="settingsUsers-link-identities"
+                            class="settingsUsers-link-signatures"
                             ui-sref="secured.dashboard({scroll: true})"
                             data-hide-upgrade="address"
                             translate-context="Action"
@@ -130,7 +143,7 @@
                     <button type="button" class="pm_button primary" ng-click="addMember()" translate-context="Action" translate>Add user</button>
                 </p>
                 <div class="pm_table visibleOverflow">
-                    <table class="bordered absorbing withDropDown">
+                    <table class="members-table bordered absorbing withDropDown">
                         <thead>
                             <tr>
                                 <th translate-context="Title" translate-comment="table heading" translate>Name</th>
@@ -147,11 +160,11 @@
                                         <i class="fa fa-info-circle"></i>
                                     </a>
                                 </th>
-                                <th translate-context="Title" translate-comment="table heading" translate>Storage</th>
+                                <th></th>
                                 <th translate-context="Title" translate-comment="table heading" translate>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="members-table-tbody">
                             <tr ng-repeat-start="member in members">
                                 <td>
                                     <span ng-bind="member.Name"></span>
@@ -170,7 +183,16 @@
                                     <span ng-hide="member.Private === 1" translate>No</span>
                                 </td>
                                 <td>
-                                    <span  translate-comment="space used out of total space allowed for a member" translate>{{ member.UsedSpace | humanSize:true:'GB' }} / {{ member.MaxSpace | humanSize:false:'GB' }} Used</span>
+                                    <div class="members-table-usage">
+                                        <i class="fa fa-hdd-o"></i>
+                                        {{ member.UsedSpace | humanSize:true:'GB' }} / {{ member.MaxSpace | humanSize:false:'GB' }}
+                                        <span translate-comment="space used out of total space allowed for a member" translate>Used</span>
+                                    </div>
+                                    <div class="members-table-usage">
+                                        <i class="fa fa-shield"></i>
+                                        {{ member.MaxVPN  }}
+                                        <span translate-comment="vpn connection used" translate>VPN Connections</span>
+                                    </div>
                                 </td>
                                 <td>
                                     <div class="pm_buttons">
@@ -188,18 +210,19 @@
                                     </div>
                                 </td>
                             </tr>
-                            <tr class="hasTable" ng-repeat-end ng-show="member.toggle === true && member.Addresses.length > 0">
+                            <tr class="hasTable member-table-addresses-wrapper" ng-repeat-end ng-show="member.toggle === true && member.Addresses.length > 0">
                                 <td colspan="6">
-                                    <div class="pm_table">
-                                        <table class="absorbing margin-top">
+                                    <div class="pm_table member-table-addresses-pmTable">
+                                        <table class="member-table-addresses absorbing">
                                             <tbody>
-                                                <tr ng-repeat="address in member.Addresses | orderBy: ['!Status','Send']">
+                                                <tr ng-repeat="address in member.Addresses | orderBy: ['!Status','Order']">
                                                     <td ng-bind="address.Email"></td>
                                                     <td class="absorbing-column">
                                                         <span class="pm_badge success" ng-show="address.Status === 1 && address.Receive === 1" translate translate-comment="address state badge">Enabled</span>
                                                         <span class="pm_badge error" ng-show="address.Status === 0"  translate translate-comment="address state badge">Disabled</span>
                                                         <span class="pm_badge warning" ng-show="address.HasKeys === 0"  translate translate-comment="address state badge">Missing keys</span>
                                                         <span class="pm_badge warning" ng-show="address.DomainID === null"  translate translate-comment="address state badge">Orphan</span>
+                                                        <span class="pm_badge primary" ng-show="$first" translate translate translate-comment="address state badge">Default</span>
                                                     </td>
                                                     <td class="text-right">
                                                         <button type="button" class="pm_button link" ng-show="isAdmin && address.Status === 0 && address.Type !== 1" ng-click="enableAddress(address)" translate-context="Action" translate>Enable</button>
@@ -215,7 +238,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="help" translate-context="Help" translate>To re-order your addresses or change your signature(s), <a ui-sref="secured.identities">go to Identities</a></p>
+                <p class="help" translate-context="Help" translate>To re-order your addresses or change your signature(s), <a ui-sref="secured.signatures">go to signatures</a></p>
             </section>
         </div>
 
@@ -267,7 +290,7 @@
                                         <td>
                                             <code>{{ organizationKeyInfo.fingerprint }}</code>
                                         </td>
-                                        <td translate translate-comment="members page to show the key size">
+                                        <td>
                                             {{ organizationKeyInfo.bitSize }} Bit
                                         </td>
                                     </tr>

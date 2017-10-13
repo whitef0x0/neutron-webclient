@@ -1,6 +1,7 @@
 angular.module('proton.sidebar')
     .directive('menuLabel', ($rootScope, labelsModel, $stateParams, dedentTpl, $state, sidebarModel) => {
 
+        const CLEANER = document.createElement('div');
         const getClassName = (ID) => {
             const isActiveLabel = $stateParams.label === ID;
             return ['menuLabel-item', isActiveLabel && 'active']
@@ -8,10 +9,14 @@ angular.module('proton.sidebar')
                 .join(' ');
         };
 
+        /**
+         * Remove HTML inside a string, prevent XSS
+         * @param  {String} s
+         * @return {String}
+         */
         const stripHTML = (s) => {
-            const holder = document.createElement('div');
-            holder.innerText = s;
-            return holder.innerHTML;
+            CLEANER.innerText = s || '';
+            return CLEANER.innerHTML;
         };
 
         const template = ({ ID, Color, Name, Exclusive }) => {
@@ -19,10 +24,13 @@ angular.module('proton.sidebar')
             const className = getClassName(ID);
             const href = $state.href('secured.label', { label: ID, sort: null, filter: null, page: null });
             const cleanName = stripHTML(Name);
+            // Prevent XSS as we can break the title
+            const cleanAttr = cleanName.replace(/"|'/g, '');
+
             const classIcon = (Exclusive === 1) ? 'fa-folder' : 'fa-tag';
 
             return dedentTpl(`<li class="${className}">
-                <a href="${href}" title="${cleanName}" class="btn menuLabel-link">
+                <a href="${href}" title="${cleanAttr}" data-label="${cleanAttr}" class="btn menuLabel-link" data-pt-dropzone-item="${ID}" data-pt-dropzone-item-type="label">
                     <i class="fa ${classIcon} menuLabel-icon" style="color: ${Color || '#CCC'}"></i>
                     <span class="menuLabel-title">${cleanName}</span>
                     <em class="menuLabel-counter" data-label-id="${ID}"></em>
@@ -43,7 +51,10 @@ angular.module('proton.sidebar')
                 const updateCounter = () => {
                     _.each(el[0].querySelectorAll('.menuLabel-counter'), (node) => {
                         const id = node.getAttribute('data-label-id');
-                        node.textContent = sidebarModel.unread('label', id);
+                        const $anchor = node.parentElement;
+                        const total = sidebarModel.unread('label', id);
+                        node.textContent = total;
+                        $anchor.title = `${$anchor.getAttribute('data-label')} ${total}`.trim();
                     });
                 };
 

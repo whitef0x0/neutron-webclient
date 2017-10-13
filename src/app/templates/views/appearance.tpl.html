@@ -103,14 +103,6 @@
                     </div>
                 </div>
             </section>
-            <!-- <section class="setting pm_form pull-right">
-                <legend translate-context="Title" translate>Internationalization</legend>
-                <label for="selectDefaultLanguage"  translate translate-comment="form option">Choose your default language.</label>
-                <span class="pm_select">
-                    <select id="selectDefaultLanguage" ng-model="appearance.locale" ng-options="locale.label for locale in appearance.locales" ng-change="saveDefaultLanguage()"></select>
-                    <i class="fa fa-angle-down"></i>
-                </span>
-            </section> -->
         </div>
         <div class="row pm_grid">
             <section class="setting pm_form col-1-2">
@@ -128,7 +120,7 @@
                         <textarea class="code" placeholder-translate="Paste your CSS code here (limited to 200,000 characters)" id="cssTheme" name="cssTheme" ng-model="appearance.cssTheme" maxlength="200000"></textarea>
                     </div>
                     <div class="text-right">
-                        <button type="button" class="pm_button" ng-click="clearTheme()" translate-context="Action" translate>Clear</button>
+                        <button type="button" class="pm_button" ng-click="clearTheme()" translate-context="Action" translate>Reset theme</button>
                         <button type="submit" class="pm_button primary" translate-context="Action" translate>Save</button>
                     </div>
                 </form>
@@ -150,6 +142,20 @@
                     <button class="pm_button" ng-click="loadThemeClassic()" translate-context="Action" translate>Load classic theme</button>
                     <button ng-if="false" class="pm_button" ng-click="enableThemeEdison()" translate-context="Action" translate>Load edison theme</button>
                 </p>
+            </section>
+        </div>
+        <div class="row pm_grid">
+            <section class="pm_form col-1-2">
+                <header-block class="settingsAppearance-header-moved">
+                    <h2
+                    class="settingsAppearance-title-moved"
+                    translate
+                    translate-comment="Section heading"
+                    translate-context="Title">Sent / Drafts folders appearance</h2>
+                </header-block>
+                <p class="alert alert-info" translate-context="Bubbule info in appearance sent and drafts folders" translate>Setting to 'Include Moved' means that sent / drafts messages that have been moved to other folders will continue to appear in the Sent/Drafts folder.</p>
+                <moved-select></moved-select>
+                <a href="https://protonmail.com/support/knowledge-base/include-moved-messages" target="_blank" class="pm_button link" translate-context="Link" translate>Learn more</a>
             </section>
         </div>
     </div>

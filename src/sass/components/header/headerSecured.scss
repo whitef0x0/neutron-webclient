@@ -1,0 +1,92 @@
+// REGULAR
+.headerSecured-container {
+    display: block;
+    background: $header-background;
+    color: $header-font-color;
+    font-size: 12px;
+    position: relative;
+    z-index: 101; /* overlay composer */
+    font-family: sans-serif;
+}
+
+.headerSecuredDesktop-container,
+.headerSecuredMobile-container {
+    display: flex;
+    width: 100%;
+    height: $headerHeight;
+    align-items: center;
+}
+
+.headerSecuredDesktop-logo {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: $sidebarWidth;
+    height: $headerHeight;
+    background-color: $logo-background;
+    box-sizing: border-box;
+    text-decoration: none;
+    padding: 5px 20px 0;
+}
+
+.headerSecuredDesktop-logo::before {
+    content: "";
+    height: 35px;
+    width: 116px;
+    background: url(../assets/img/logo/logo.svg) no-repeat center bottom;
+}
+
+.headerSecuredDesktop-logo::after {
+    position: relative;
+    width: 116px;
+    top: -8px;
+    text-align: right;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+    font-size: .7em;
+    content: attr(data-plan-name);
+}
+
+
+// MOBILE
+body.appConfigBody-is-mobile .headerSecuredMobile-container { height: 70px }
+
+.headerSecuredMobile-toggleSidebar,
+.headerSecuredMobile-searchBtn,
+.headerSecuredMobile-compose {
+    height: 100%;
+    font-size: 1.6em;
+    width: 2em;
+}
+
+.headerSecuredMobile-toggleSidebar {
+    margin-right: auto;
+    font-size: 2em
+}
+
+.headerSecuredMobile-searchBtn { width: 3em }
+
+.headerSecuredMobile-compose {
+    background: transparent;
+    border: 0;
+    color: $white;
+    max-width: 4rem;
+    min-width: 4rem;
+    text-align: center;
+    width: auto;
+    &:hover { background: transparent }
+}
+
+// Composer maximized
+.appConfigBody-is-mobile.appConfigBody-activeComposer {
+    .headerSecured-container {
+        pointer-events: none
+    }
+}
+@media screen and (max-width: $tablet-landscape) {
+    .headerSecured-container {
+        z-index: 100; /* underlay composer */
+    }
+}

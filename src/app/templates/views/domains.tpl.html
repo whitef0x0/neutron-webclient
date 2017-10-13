@@ -11,7 +11,7 @@
                         translate-context="Title">Domains</h2>
                 </header-block>
 
-                <p class="alert alert-info">Use your own domain with ProtonMail and use your own email address, e.g. yourname@yourdomain.com. To enable this feature, <a ui-sref="secured.dashboard({scroll: true})">upgrade to ProtonMail Plus</a>.</p>
+                <p class="alert alert-info" translate>Use your own domain with ProtonMail and use your own email address, e.g. yourname@yourdomain.com. To enable this feature, <a ui-sref="secured.dashboard({scroll: true})">upgrade to ProtonMail Plus</a>.</p>
             </section>
         </div>
 
@@ -35,7 +35,10 @@
                     </small>
                 </header-block>
 
-                <p class="alert alert-info" ng-show="organization.UsedDomains === organization.MaxDomains">You have reached your custom domain limit. <a ui-sref="secured.dashboard">Click here</a> to upgrade your plan to add more.</p>
+                <p
+                    class="alert alert-info"
+                    ng-show="organization.UsedDomains === organization.MaxDomains"
+                    translate-context="Domains information" translate>You have reached your custom domain limit. <a ui-sref="secured.dashboard">Click here</a> to upgrade your plan to add more.</p>
                 <div class="margin">
                     <button ng-hide="organization.UsedDomains === organization.MaxDomains" type="button" class="pm_button primary" ng-click="addDomain()" translate-context="Action" translate-comment="button to add custom domains" translate>Add custom domain</button>
                     <button type="button" class="pm_button" ng-click="refreshStatus()" translate-context="Action" translate>Refresh domain status</button>
@@ -119,7 +122,7 @@
                             </tr>
                             <tr ng-if="domain.State === 2">
                                 <td colspan="2">
-                                    <p class="alert alert-warning">Check your DNS settings.</p>
+                                    <p class="alert alert-warning" translate>Check your DNS settings.</p>
                                 </td>
                                 <td></td>
                             </tr>
@@ -134,9 +137,9 @@
                 </div>
                 <div class="alert alert-info" ng-show="domains.length === 0">
                     <p>
-                        <strong  translate>No custom domain found</strong>
+                        <strong translate>No custom domain found</strong>
                     </p>
-                    <p>Click on 'ADD CUSTOM DOMAIN' button to add it.</p>
+                    <p translate>Click on 'ADD CUSTOM DOMAIN' button to add a domain.</p>
                 </div>
             </section>
             <p>&nbsp;</p>
@@ -167,7 +170,10 @@
                     <p>
                         <button type="button" class="pm_button primary" ng-click="addAddress(domain)" translate-context="Action" translate-comment="add address button on the domains page" translate>Add address</button>
                     </p>
-                    <p class="alert alert-info" ng-show="domain.Addresses.length > 0">Addresses must be disabled before they can be deleted. Addresses can only be deleted if all messages associated with that address are deleted.</p>
+                    <p
+                        class="alert alert-info"
+                        ng-show="domain.Addresses.length > 0"
+                        translate-context="Domains information" translate>Addresses must be disabled before they can be deleted. Addresses can only be deleted if all messages associated with that address are deleted.</p>
                     <div class="pm_table">
                         <table class="pm_form bordered" ng-show="domain.Addresses.length > 0">
                             <thead>
@@ -175,11 +181,17 @@
                                     <th ng-if="keyPhase > 3" translate-context="Title" translate-comment="table heading for the domains page table listing of addresses" translate>Name</th>
                                     <th translate-context="Title" translate-comment="table heading for the domains page table listing of addresses" translate>Address</th>
                                     <th translate-context="Title" translate-comment="table heading for the domains page table listing of addresses" translate>Status</th>
+                                    <th>
+                                        <span translate-context="Title" translate-comment="table heading for the domains page table listing of addresses" translate>Catch-All</span>
+                                        <a href="https://protonmail.com/support/knowledge-base/catch-all/" target="_blank">
+                                            <i class="fa fa-info-circle" pt-tooltip-translate="Set a catch-all address for your domain." pt-tooltip-translate-context="Info"></i>
+                                        </a>
+                                    </th>
                                     <th class="text-right actions" translate-context="Title" translate>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="address in domain.Addresses | orderBy: 'Send'" ng-class="{'disabled': address.Status === 0}">
+                                <tr ng-repeat="address in domain.Addresses | orderBy: 'Order'" ng-class="{'disabled': address.Status === 0}">
                                     <td ng-if="keyPhase > 3">
                                         <a ui-sref="secured.members({action: 'edit', id: address.MemberID})" ng-bind="member(address.MemberID).Name" class="text-purple"></a>
                                     </td>
@@ -188,6 +200,14 @@
                                         <span class="pm_badge success" ng-show="address.Status === 1 && address.Receive === 1" translate translate-comment="address state badge">Enabled</span>
                                         <span class="pm_badge error" ng-show="address.Status === 0" translate translate-comment="address state badge">Disabled</span>
                                         <span class="pm_badge warning" ng-show="address.HasKeys === 0" translate translate-comment="address state badge">Missing keys</span>
+                                    </td>
+                                    <td class="domains-catchAll-container">
+                                        <custom-checkbox
+                                            class="domains-catchAll-input"
+                                            data-custom-ng-model="address.catchall"
+                                            data-custom-ng-change="changeCatchall(address, domain)"
+                                            data-custom-ng-init="address.catchall = !!address.CatchAll"
+                                            ></custom-checkbox>
                                     </td>
                                     <td class="text-right">
                                         <button type="button" class="pm_button link" ng-show="address.Status === 0 && address.Type !== 1" ng-click="enableAddress(address)" translate-context="Action" translate>Enable</button>
