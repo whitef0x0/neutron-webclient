@@ -1,7 +1,7 @@
 angular.module('proton.user')
     .directive('signupLink', (gettextCatalog) => {
 
-        const getURL = (lang = '') => ['https://protonmail.com', lang, 'signup'].filter(Boolean).join('/');
+        const getURL = (lang = '') => ['/create/new', lang].filter(Boolean).join('/');
 
         const getI18n = () => ({
             forFree: gettextCatalog.getString('Sign up for free', null, 'Action'),
